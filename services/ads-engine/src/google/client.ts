@@ -7,11 +7,11 @@ interface GMBCreds { access_token: string; account_id: string; location_id: stri
 async function gAdsApi(c: GoogleCreds, path: string, body?: any) {
   return fetch(`https://googleads.googleapis.com/v18/${path}`, { method: body ? "POST" : "GET",
     headers: { Authorization: `Bearer ${c.access_token}`, "developer-token": c.developer_token, "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined }).then(r => r.json());
+    body: body ? JSON.stringify(body) : undefined }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || "Google Ads API request failed"); return d; });
 }
 async function gmbApi(c: GMBCreds, path: string, opts: RequestInit = {}) {
   return fetch(`https://mybusinessbusinessinformation.googleapis.com/v1/${path}`, { ...opts,
-    headers: { Authorization: `Bearer ${c.access_token}`, "Content-Type": "application/json", ...opts.headers } }).then(r => r.json());
+    headers: { Authorization: `Bearer ${c.access_token}`, "Content-Type": "application/json", ...opts.headers } }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d?.error?.message || "Google My Business API request failed"); return d; });
 }
 
 export const googleAds = {

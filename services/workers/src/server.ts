@@ -27,6 +27,10 @@ async function start() {
   // Start campaign worker
   startCampaignWorker();
 
+  // Start feedback worker
+  const { startFeedbackWorker } = await import("./feedback");
+  startFeedbackWorker();
+
   // Cron: Loyalty expiration (daily)
   app.get("/cron/loyalty-expire", async (req, reply) => {
     const secret = (req.query as any)?.secret;

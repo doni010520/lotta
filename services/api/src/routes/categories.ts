@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../plugins/auth-guard";
+import { requireAuth, requireRole } from "../plugins/auth-guard";
 import { createCategorySchema, updateCategorySchema } from "@lotta/shared";
 
 export async function categoryRoutes(app: FastifyInstance) {
@@ -14,7 +14,7 @@ export async function categoryRoutes(app: FastifyInstance) {
     return data ?? [];
   });
 
-  app.post("/", async (request, reply) => {
+  app.post("/", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const parsed = createCategorySchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
@@ -28,7 +28,7 @@ export async function categoryRoutes(app: FastifyInstance) {
     return reply.status(201).send(data);
   });
 
-  app.patch("/:id", async (request, reply) => {
+  app.patch("/:id", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const { id } = request.params as any;
     const parsed = updateCategorySchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
@@ -45,7 +45,7 @@ export async function categoryRoutes(app: FastifyInstance) {
     return data;
   });
 
-  app.delete("/:id", async (request, reply) => {
+  app.delete("/:id", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const { id } = request.params as any;
     const { error } = await request.supabase
       .from("categories")

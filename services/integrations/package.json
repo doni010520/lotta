@@ -2,7 +2,7 @@
   "name": "@lotta/integrations",
   "version": "0.0.1",
   "private": true,
-  "scripts": { "dev": "tsx watch src/server.ts", "build": "tsc", "test": "vitest" },
+  "scripts": { "dev": "tsx watch src/server.ts", "build": "tsc", "lint": "eslint . --ext .ts,.tsx --max-warnings=0", "test": "vitest" },
   "dependencies": {
     "@lotta/shared": "workspace:*",
     "@supabase/supabase-js": "^2.45.0",

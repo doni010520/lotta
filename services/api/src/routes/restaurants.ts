@@ -5,14 +5,14 @@ import { updateRestaurantSchema } from "@lotta/shared";
 export async function restaurantRoutes(app: FastifyInstance) {
   app.addHook("onRequest", requireAuth);
 
-  app.get("/current", async (request) => {
+  app.get("/current", async (request, reply) => {
     const { data, error } = await request.supabase
       .from("restaurants")
       .select("*")
       .eq("id", request.restaurantId)
       .single();
 
-    if (error) return { error: error.message };
+    if (error) return reply.status(400).send({ error: error.message });
     return data;
   });
 

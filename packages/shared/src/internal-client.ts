@@ -1,7 +1,8 @@
 const WA_URL = process.env.WHATSAPP_INTERNAL_URL || "http://lotta_lotta-whatsapp:3003";
-const SECRET = process.env.INTERNAL_API_SECRET || "lotta-internal";
+const SECRET = process.env.INTERNAL_API_SECRET;
 
 async function internalPost(service: string, path: string, body: any) {
+  if (!SECRET) throw new Error("INTERNAL_API_SECRET is required for internal service calls");
   const urls: Record<string, string> = {
     whatsapp: WA_URL,
   };

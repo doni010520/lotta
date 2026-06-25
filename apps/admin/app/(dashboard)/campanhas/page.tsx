@@ -38,7 +38,12 @@ export default function CampanhasPage() {
   async function sendCampaign(id: string) {
     if (!confirm("Enviar esta campanha agora?")) return;
     // In production: add job to BullMQ campaign queue
-    await supabase.from("campaigns").update({ status: "scheduled" }).eq("id", id);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/campaigns/${id}/send`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
     toast.success("Campanha agendada para envio");
     load();
   }

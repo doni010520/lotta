@@ -3,9 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { getProvider } from "../providers";
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET || "lotta-internal";
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET!;
 
 export async function sendRoutes(app: FastifyInstance) {
+  if (!process.env.INTERNAL_API_SECRET) {
+    throw new Error('INTERNAL_API_SECRET is required');
+  }
+
   // Auth: only internal services can call this
   app.addHook("onRequest", async (req, reply) => {
     const token = req.headers["x-internal-secret"];

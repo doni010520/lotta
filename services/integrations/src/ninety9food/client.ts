@@ -9,7 +9,9 @@ async function api(c: Creds, path: string, opts: RequestInit = {}) {
     ...opts, headers: { "Content-Type": "application/json", Authorization: `Bearer ${c.access_token}`, ...opts.headers },
   });
   if (res.status === 204) return null;
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || "99Food API request failed");
+  return data;
 }
 
 export const ninety9food = {

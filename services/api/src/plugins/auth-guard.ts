@@ -6,9 +6,11 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
   }
 }
 
-export async function requireRole(roles: string[]) {
+export function requireRole(...roles: string[]) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.userId) return reply.status(401).send({ error: "Not authenticated" });
+    if (!request.userId || !request.restaurantId) {
+      return reply.status(401).send({ error: "Not authenticated" });
+    }
 
     const { data } = await request.supabaseAdmin
       .from("restaurant_users")
@@ -18,7 +20,7 @@ export async function requireRole(roles: string[]) {
       .single();
 
     if (!data || !roles.includes(data.role)) {
-      return reply.status(403).send({ error: "Insufficient permissions" });
+      return reply.status(403).send({ error: "Permissão insuficiente" });
     }
   };
 }

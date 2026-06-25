@@ -193,20 +193,49 @@ async function createOrderFromAgent(
       const attrs = match[1];
       const getId = (name: string) => attrs.match(new RegExp(`${name}="([^"]*)"`))?.[1] ?? "";
 
-      const qty = parseInt(getId("quantidade")) || 1;
-      const price = parseFloat(getId("preco_unitario")) || 0;
-      const total = price * qty;
+      const qty = Math.max(1, parseInt(getId("quantidade")) || 1);
+      const productId = getId("produto_id");
+
+      // NEVER trust LLM for prices — re-read from database
+      let price = 0;
+      const optionPriceMap: Record<string, number> = {};
+      if (productId) {
+        const { data: dbProduct } = await supabase
+          .from("products")
+          .select("price, promo_price")
+          .eq("id", productId)
+          .eq("restaurant_id", config.restaurantId)
+          .single();
+        price = Number(dbProduct?.promo_price ?? dbProduct?.price ?? 0);
+
+        // Recompute option prices from DB (never trust LLM)
+        const { data: dbOptions } = await supabase
+          .from("options")
+          .select("name, price, option_groups!inner(product_id)")
+          .eq("restaurant_id", config.restaurantId)
+          .eq("is_active", true)
+          .eq("option_groups.product_id", productId);
+        for (const o of dbOptions ?? []) optionPriceMap[(o as any).name] = Number((o as any).price);
+      }
+
+      const selectedOptions = getId("opcoes")
+        ? getId("opcoes").split(",").map((o: string) => {
+            const name = o.trim();
+            return { group_name: "", option_name: name, price: optionPriceMap[name] ?? 0 };
+          })
+        : [];
+      const optionsTotal = selectedOptions.reduce((s: number, o: any) => s + o.price, 0);
+
+      const total = (price + optionsTotal) * qty;
       subtotal += total;
 
       items.push({
-        product_id: getId("produto_id") || null,
+        product_id: productId || null,
         product_name: getId("nome"),
         quantity: qty,
         unit_price: price,
         total_price: total,
-        options: getId("opcoes") ? getId("opcoes").split(",").map((o: string) => ({
-          group_name: "", option_name: o.trim(), price: 0,
-        })) : [],
+        options: selectedOptions,
         notes: getId("observacao") || null,
       });
     }
@@ -251,7 +280,7 @@ async function createOrderFromAgent(
         payment_method: paymentMethod,
         payment_status: paymentMethod === "pix" ? "pending" : "paid",
         subtotal,
-        delivery_fee: 0,
+        delivery_fee: 0, // TODO: compute from delivery_zone when address is parsed
         total: subtotal,
         customer_name: ctx.customerName || null,
         customer_phone: phone,
@@ -293,10 +322,12 @@ async function createOrderFromAgent(
     }
 
     // Update customer stats
-    await supabase.rpc("increment_customer_stats", {
-      p_customer_id: customer?.id,
-      p_total: subtotal,
-    }).catch(() => {});
+    try {
+      await supabase.rpc("increment_customer_stats", {
+        p_customer_id: customer?.id,
+        p_total: subtotal,
+      });
+    } catch {}
 
     return { success: true, orderNumber: verification.order_number };
   } catch (err: any) {

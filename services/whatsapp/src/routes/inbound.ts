@@ -7,9 +7,12 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-// Debounce buffer: collect rapid messages before responding
-const buffers = new Map<string, { messages: string[]; timer: NodeJS.Timeout }>();
+import IORedis from "ioredis";
+
+// Debounce buffer via Redis (survives restart, works multi-instance)
+const redis = new IORedis(process.env.REDIS_URL || "redis://localhost:6379");
 const DEBOUNCE_MS = parseInt(process.env.BOT_DEBOUNCE_MS || "5000");
+const localTimers = new Map<string, NodeJS.Timeout>(); // timers still local but data in Redis
 
 export async function handleInboundMessage(msg: InboundMessage) {
   if (msg.fromMe) return; // Ignore own messages (echo)
@@ -84,26 +87,28 @@ export async function handleInboundMessage(msg: InboundMessage) {
 
   // Debounce: buffer rapid messages
   const bufferKey = `${restaurant.id}:${msg.from}`;
-  const existing = buffers.get(bufferKey);
-
   const messageText = msg.contentType === "audio"
     ? `[AUDIO:${msg.mediaUrl}]`
     : msg.body ?? "";
 
-  if (existing) {
-    existing.messages.push(messageText);
-    clearTimeout(existing.timer);
-    existing.timer = setTimeout(() => {
-      buffers.delete(bufferKey);
-      processBuffered(instance, restaurant, conversation!, msg, existing.messages);
-    }, DEBOUNCE_MS);
-  } else {
-    const timer = setTimeout(() => {
-      buffers.delete(bufferKey);
-      processBuffered(instance, restaurant, conversation!, msg, [messageText]);
-    }, DEBOUNCE_MS);
-    buffers.set(bufferKey, { messages: [messageText], timer });
-  }
+  // Push message to Redis list
+  await redis.rpush(`debounce:${bufferKey}`, messageText);
+  await redis.expire(`debounce:${bufferKey}`, 60); // TTL 60s safety
+
+  // Clear existing timer
+  const existingTimer = localTimers.get(bufferKey);
+  if (existingTimer) clearTimeout(existingTimer);
+
+  // Set new timer
+  const timer = setTimeout(async () => {
+    localTimers.delete(bufferKey);
+    const messages = await redis.lrange(`debounce:${bufferKey}`, 0, -1);
+    await redis.del(`debounce:${bufferKey}`);
+    if (messages.length > 0) {
+      processBuffered(instance, restaurant, conversation!, msg, messages);
+    }
+  }, DEBOUNCE_MS);
+  localTimers.set(bufferKey, timer);
 }
 
 async function processBuffered(

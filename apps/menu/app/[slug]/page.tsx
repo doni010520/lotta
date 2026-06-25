@@ -1,3 +1,5 @@
+export const revalidate = 60; // ISR: revalidate every 60 seconds
+
 import { createServiceClient } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import { MenuClient } from "@/components/menu-client";

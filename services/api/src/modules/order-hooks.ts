@@ -65,12 +65,19 @@ export async function onOrderStatusChange(
       }
     }
 
-    // Request feedback (after 30min delay via setTimeout — in production use BullMQ delayed job)
-    setTimeout(async () => {
-      await wa.sendText(restaurantId, order.customer_phone,
-        `Como foi seu pedido #${order.order_number}? De 1 a 5, qual nota você dá? 🌟`
-      ).catch(() => {});
-    }, 30 * 60 * 1000);
+    // Request feedback after 30min via BullMQ delayed job
+    try {
+      const IORedis = (await import('ioredis')).default;
+      const { Queue } = await import('bullmq');
+      const redis = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', { maxRetriesPerRequest: null });
+      const feedbackQueue = new Queue('feedback-requests', { connection: redis });
+      await feedbackQueue.add('request-feedback', {
+        restaurantId, phone: order.customer_phone, orderNumber: order.order_number,
+      }, { delay: 30 * 60 * 1000 }); // 30 minutes
+      await redis.quit();
+    } catch (err) {
+      console.error('Failed to queue feedback request:', err);
+    }
   }
 }
 
@@ -100,7 +107,7 @@ export async function onOrderCreated(
     const ADS_URL = process.env.ADS_INTERNAL_URL || "http://lotta_lotta-ads:3006";
     await fetch(`${ADS_URL}/api/capi/purchase`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_API_SECRET || "lotta-internal" },
+      headers: { "Content-Type": "application/json", "x-internal-secret": process.env.INTERNAL_API_SECRET || "" },
       body: JSON.stringify({ restaurant_id: restaurantId, phone: order.customer_phone, value: order.total, order_id: orderId }),
     }).catch((err) => console.error("CAPI event failed:", err.message));
   }

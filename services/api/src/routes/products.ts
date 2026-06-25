@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../plugins/auth-guard";
+import { requireAuth, requireRole } from "../plugins/auth-guard";
 import { createProductSchema, updateProductSchema } from "@lotta/shared";
 
 export async function productRoutes(app: FastifyInstance) {
@@ -33,7 +33,7 @@ export async function productRoutes(app: FastifyInstance) {
     return data;
   });
 
-  app.post("/", async (request, reply) => {
+  app.post("/", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const parsed = createProductSchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
 
@@ -47,7 +47,7 @@ export async function productRoutes(app: FastifyInstance) {
     return reply.status(201).send(data);
   });
 
-  app.patch("/:id", async (request, reply) => {
+  app.patch("/:id", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const { id } = request.params as any;
     const parsed = updateProductSchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
@@ -64,7 +64,7 @@ export async function productRoutes(app: FastifyInstance) {
     return data;
   });
 
-  app.delete("/:id", async (request, reply) => {
+  app.delete("/:id", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const { id } = request.params as any;
     const { error } = await request.supabase
       .from("products")
@@ -77,7 +77,7 @@ export async function productRoutes(app: FastifyInstance) {
   });
 
   // ── Option Groups ──
-  app.post("/:productId/option-groups", async (request, reply) => {
+  app.post("/:productId/option-groups", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const { productId } = request.params as any;
     const body = request.body as any;
 
@@ -100,7 +100,7 @@ export async function productRoutes(app: FastifyInstance) {
   });
 
   // ── Options ──
-  app.post("/:productId/option-groups/:groupId/options", async (request, reply) => {
+  app.post("/:productId/option-groups/:groupId/options", { preHandler: requireRole("owner", "manager") }, async (request, reply) => {
     const { groupId } = request.params as any;
     const body = request.body as any;
 

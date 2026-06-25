@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../plugins/auth-guard";
+import { requireAuth, requireRole } from "../plugins/auth-guard";
 import { createOperatingHourSchema } from "@lotta/shared";
 
 export async function operatingHourRoutes(app: FastifyInstance) {

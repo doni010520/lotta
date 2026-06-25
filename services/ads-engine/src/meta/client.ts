@@ -7,7 +7,9 @@ interface MetaAdsCreds { access_token: string; ad_account_id: string; page_id: s
 async function graphApi(creds: MetaAdsCreds, path: string, opts: RequestInit = {}) {
   const sep = path.includes("?") ? "&" : "?";
   const res = await fetch(`https://graph.facebook.com/${GRAPH}${path}${sep}access_token=${creds.access_token}`, { ...opts, headers: { "Content-Type": "application/json", ...opts.headers } });
-  return res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || "Meta Graph API request failed");
+  return data;
 }
 
 export const metaAds = {

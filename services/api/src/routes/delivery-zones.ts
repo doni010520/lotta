@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../plugins/auth-guard";
+import { requireAuth, requireRole } from "../plugins/auth-guard";
 import { createDeliveryZoneSchema, updateDeliveryZoneSchema } from "@lotta/shared";
 
 export async function deliveryZoneRoutes(app: FastifyInstance) {

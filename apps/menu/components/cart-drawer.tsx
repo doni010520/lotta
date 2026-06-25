@@ -6,7 +6,7 @@ import { useCart } from "@/lib/cart";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createOrder, requestPixPayment } from "@/lib/payment-client";
 
 interface Props {
   slug: string;
@@ -15,7 +15,7 @@ interface Props {
   onClose: () => void;
 }
 
-type Step = "cart" | "address" | "payment";
+type Step = "cart" | "address" | "payment" | "pix";
 
 export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
   const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
@@ -28,6 +28,8 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
   const [notes, setNotes] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pixData, setPixData] = useState<{ pixCode?: string; pixQrBase64?: string } | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const router = useRouter();
 
   const deliveryFee = selectedZone?.fee ?? 0;
@@ -50,96 +52,44 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
     setLoading(true);
 
     try {
-      // Get restaurant
-      const { data: restaurant } = await supabase
-        .from("restaurants")
-        .select("id")
-        .eq("slug", slug)
-        .single();
-
-      if (!restaurant) throw new Error("Restaurante não encontrado");
-
-      // Find or create customer
-      const { data: existing } = await supabase
-        .from("customers")
-        .select("id")
-        .eq("restaurant_id", restaurant.id)
-        .eq("phone", customerPhone.replace(/\D/g, ""))
-        .single();
-
-      let customerId = existing?.id;
-
-      if (!customerId) {
-        const { data: newCustomer } = await supabase
-          .from("customers")
-          .insert({
-            restaurant_id: restaurant.id,
-            name: customerName,
-            phone: customerPhone.replace(/\D/g, ""),
-            source: "organic",
-          })
-          .select("id")
-          .single();
-        customerId = newCustomer?.id;
-      }
-
-      // Create order
-      const orderPayload = {
-        restaurant_id: restaurant.id,
-        customer_id: customerId,
-        channel: "cardapio",
-        status: paymentMethod === "cash" || paymentMethod === "card_on_delivery" ? "confirmed" : "pending",
-        payment_method: paymentMethod,
-        payment_status: paymentMethod === "cash" || paymentMethod === "card_on_delivery" ? "paid" : "pending",
-        subtotal,
-        delivery_fee: deliveryFee,
-        discount: 0,
-        total,
-        delivery_address: address,
+      // Cria o pedido no servidor — total/preços recomputados a partir do banco (Nível B)
+      const order = await createOrder({
+        restaurant_slug: slug,
         customer_name: customerName,
-        customer_phone: customerPhone.replace(/\D/g, ""),
+        customer_phone: customerPhone,
+        delivery_address: address,
+        zone_id: selectedZone?.id ?? null,
+        payment_method: paymentMethod,
         notes: notes || null,
         scheduled_for: scheduledFor || null,
-      };
-
-      const { data: order, error: orderErr } = await supabase
-        .from("orders")
-        .insert(orderPayload)
-        .select("id, order_number")
-        .single();
-
-      if (orderErr) throw orderErr;
-
-      // Create order items
-      const orderItems = items.map((item) => ({
-        order_id: order.id,
-        restaurant_id: restaurant.id,
-        product_id: item.productId,
-        product_name: item.productName,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        total_price: item.totalPrice,
-        options: item.options,
-        notes: item.notes || null,
-      }));
-
-      await supabase.from("order_items").insert(orderItems);
-
-      // Create status history
-      await supabase.from("order_status_history").insert({
-        order_id: order.id,
-        restaurant_id: restaurant.id,
-        to_status: orderPayload.status,
-        notes: "Pedido criado pelo cardápio digital",
+        items: items.map((item) => ({
+          product_id: item.productId,
+          quantity: item.quantity,
+          options: item.options.map((o) => ({ group_name: o.groupName, option_name: o.optionName })),
+          notes: item.notes || null,
+        })),
       });
 
-      // Update customer stats
-      await supabase.rpc("increment_customer_stats", {
-        p_customer_id: customerId,
-        p_total: total,
-      }).catch(() => {});
+      if (order.error || !order.id) {
+        throw new Error(typeof order.error === "string" ? order.error : "Erro ao criar pedido");
+      }
 
+      setCreatedOrderId(order.id);
       clearCart();
+
+      // Pagamento online via Pix: gera a cobrança no gateway do restaurante
+      if (paymentMethod === "pix") {
+        const pay = await requestPixPayment(order.id);
+        if (pay.error || !pay.pixCode) {
+          toast.error(pay.error || "Não foi possível gerar o Pix. Acompanhe o pedido.");
+          router.push(`/${slug}/pedido/${order.id}`);
+          return;
+        }
+        setPixData(pay);
+        setStep("pix");
+        return;
+      }
+
       toast.success("Pedido realizado!");
       router.push(`/${slug}/pedido/${order.id}`);
     } catch (err: any) {
@@ -318,6 +268,36 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
                 </button>
               </div>
             </>
+          )}
+
+          {step === "pix" && pixData && (
+            <div className="text-center">
+              <p className="text-sm font-medium mb-3">Pague com Pix para confirmar seu pedido</p>
+              {pixData.pixQrBase64 && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={`data:image/png;base64,${pixData.pixQrBase64}`} alt="QR Code Pix" className="w-48 h-48 mx-auto mb-3" />
+              )}
+              <p className="text-xs text-gray-500 mb-1">Pix copia e cola</p>
+              <textarea
+                readOnly
+                value={pixData.pixCode || ""}
+                rows={3}
+                className="w-full border rounded-lg px-3 py-2 text-xs mb-3"
+                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+              />
+              <button
+                onClick={() => { navigator.clipboard?.writeText(pixData.pixCode || ""); toast.success("Código copiado"); }}
+                className="w-full border rounded-xl py-2.5 text-sm mb-2"
+              >
+                Copiar código Pix
+              </button>
+              <button
+                onClick={() => createdOrderId && router.push(`/${slug}/pedido/${createdOrderId}`)}
+                className="w-full bg-paprica text-white rounded-xl py-3 text-sm font-medium"
+              >
+                Já paguei · acompanhar pedido
+              </button>
+            </div>
           )}
         </div>
       </div>

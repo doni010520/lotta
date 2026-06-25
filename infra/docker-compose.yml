@@ -1,51 +1,93 @@
-version: "3.8"
-
 services:
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
     volumes: [redisdata:/data]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
   api:
     build: { context: ../, dockerfile: services/api/Dockerfile }
     ports: ["3001:3001"]
     env_file: ../.env
-    depends_on: [redis]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   admin:
     build: { context: ../, dockerfile: apps/admin/Dockerfile }
     ports: ["3000:3000"]
     env_file: ../.env
-    depends_on: [api]
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
 
   menu:
     build: { context: ../, dockerfile: apps/menu/Dockerfile }
     ports: ["3002:3002"]
     env_file: ../.env
-    depends_on: [api]
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
 
   whatsapp:
     build: { context: ../, dockerfile: services/whatsapp/Dockerfile }
     ports: ["3003:3003"]
     env_file: ../.env
-    depends_on: [redis]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   integrations:
     build: { context: ../, dockerfile: services/integrations/Dockerfile }
     ports: ["3004:3004"]
     env_file: ../.env
-    depends_on: [redis]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   workers:
     build: { context: ../, dockerfile: services/workers/Dockerfile }
     ports: ["3005:3005"]
     env_file: ../.env
-    depends_on: [redis]
+    restart: unless-stopped
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ads-engine:
     build: { context: ../, dockerfile: services/ads-engine/Dockerfile }
     ports: ["3006:3006"]
     env_file: ../.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   redisdata:

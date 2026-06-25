@@ -8,13 +8,22 @@ import { categoryRoutes } from "./routes/categories";
 import { productRoutes } from "./routes/products";
 import { deliveryZoneRoutes } from "./routes/delivery-zones";
 import { operatingHourRoutes } from "./routes/operating-hours";
+import { campaignApiRoutes } from "./routes/campaigns";
+import { paymentRoutes } from "./routes/payments";
+import { dispatchRoutes } from "./routes/dispatch";
 import { orderRoutes } from "./routes/orders";
+import { publicOrderRoutes } from "./routes/public-orders";
 import { uploadRoutes } from "./routes/uploads";
 
 const app = Fastify({ logger: true });
 
 async function start() {
-  await app.register(cors, { origin: true });
+  
+const ALLOWED_ORIGINS = [
+  process.env.ADMIN_URL || 'http://localhost:3000',
+  process.env.MENU_URL || 'http://localhost:3002',
+].filter(Boolean);
+  await app.register(cors, { origin: ALLOWED_ORIGINS });
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
   await app.register(supabasePlugin);
 
@@ -24,6 +33,10 @@ async function start() {
   await app.register(productRoutes, { prefix: "/api/products" });
   await app.register(deliveryZoneRoutes, { prefix: "/api/delivery-zones" });
   await app.register(operatingHourRoutes, { prefix: "/api/operating-hours" });
+  await app.register(campaignApiRoutes, { prefix: "/api/campaigns" });
+  await app.register(publicOrderRoutes, { prefix: "/api/public" });
+  await app.register(paymentRoutes, { prefix: "/api/payments" });
+  await app.register(dispatchRoutes, { prefix: "/api/orders" });
   await app.register(orderRoutes, { prefix: "/api/orders" });
   await app.register(uploadRoutes, { prefix: "/api/uploads" });
 

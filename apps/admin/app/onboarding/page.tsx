@@ -22,21 +22,26 @@ export default function OnboardingPage() {
   async function saveStep() {
     const currentStep = STEPS[step].key;
 
+    // Get current restaurant ID
+    const { data: memberships } = await supabase.from("restaurant_users").select("restaurant_id").limit(1).single();
+    const restId = memberships?.restaurant_id;
+    if (!restId) { toast.error("Restaurante não encontrado"); return; }
+
     if (currentStep === "restaurant") {
       await supabase.from("restaurants").update({
         name: data.name, phone: data.phone, email: data.email,
         address: { street: data.street, number: data.number, neighborhood: data.neighborhood, city: data.city, state: data.state, zip: data.zip },
-      }).not("id", "is", null);
+      }).eq("id", restId);
     }
 
     if (currentStep === "delivery" && data.zones) {
       for (const z of data.zones) {
-        await supabase.from("delivery_zones").insert({ name: z.name, type: "radius", radius_km: z.radius, fee: z.fee, estimated_min: z.time || 30 });
+        await supabase.from("delivery_zones").insert({ restaurant_id: restId, name: z.name, type: "radius", radius_km: z.radius, fee: z.fee, estimated_min: z.time || 30 });
       }
     }
 
     if (currentStep === "whatsapp") {
-      await supabase.from("whatsapp_instances").upsert({
+      await supabase.from("whatsapp_instances").upsert({ restaurant_id: restId,
         provider: data.wa_provider || "uazapi",
         credentials: { host: data.wa_host, token: data.wa_token, instance: data.wa_instance },
         agent_enabled: true,
@@ -47,13 +52,13 @@ export default function OnboardingPage() {
       await supabase.from("whatsapp_instances").update({
         agent_name: data.agent_name || "Assistente",
         agent_persona: data.agent_persona || "Você é um assistente simpático e eficiente.",
-      }).not("id", "is", null);
+      }).eq("restaurant_id", restId);
     }
 
     if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else {
-      await supabase.from("restaurants").update({ is_open: true }).not("id", "is", null);
+      await supabase.from("restaurants").update({ is_open: true }).eq("id", restId);
       toast.success("Restaurante configurado! Seu cardápio está ativo.");
       router.push("/pedidos");
     }
