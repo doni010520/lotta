@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+
+  api:
+    build: { context: ../, dockerfile: services/api/Dockerfile }
+    ports: ["3001:3001"]
+    env_file: ../.env
+    depends_on: [redis]
+
+  admin:
+    build: { context: ../, dockerfile: apps/admin/Dockerfile }
+    ports: ["3000:3000"]
+    env_file: ../.env
+    depends_on: [api]
+
+  menu:
+    build: { context: ../, dockerfile: apps/menu/Dockerfile }
+    ports: ["3002:3002"]
+    env_file: ../.env
+    depends_on: [api]
+
+  whatsapp:
+    build: { context: ../, dockerfile: services/whatsapp/Dockerfile }
+    ports: ["3003:3003"]
+    env_file: ../.env
+    depends_on: [redis]
+
+  integrations:
+    build: { context: ../, dockerfile: services/integrations/Dockerfile }
+    ports: ["3004:3004"]
+    env_file: ../.env
+    depends_on: [redis]
+
+  workers:
+    build: { context: ../, dockerfile: services/workers/Dockerfile }
+    ports: ["3005:3005"]
+    env_file: ../.env
+    depends_on: [redis]
+
+  ads-engine:
+    build: { context: ../, dockerfile: services/ads-engine/Dockerfile }
+    ports: ["3006:3006"]
+    env_file: ../.env
+
+volumes:
+  redisdata:

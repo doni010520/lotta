@@ -1,0 +1,28 @@
+{
+  "name": "lotta",
+  "private": true,
+  "scripts": {
+    "dev:api": "pnpm --filter @lotta/api dev",
+    "dev:admin": "pnpm --filter @lotta/admin dev",
+    "dev:menu": "pnpm --filter @lotta/menu dev",
+    "dev:whatsapp": "pnpm --filter @lotta/whatsapp dev",
+    "dev:integrations": "pnpm --filter @lotta/integrations dev",
+    "dev:workers": "pnpm --filter @lotta/workers dev",
+    "dev:ads": "pnpm --filter @lotta/ads-engine dev",
+    "dev:menu": "pnpm --filter @lotta/menu dev",
+    "dev:whatsapp": "pnpm --filter @lotta/whatsapp dev",
+    "dev:integrations": "pnpm --filter @lotta/integrations dev",
+    "dev:workers": "pnpm --filter @lotta/workers dev",
+    "dev:ads": "pnpm --filter @lotta/ads-engine dev",
+    "build:api": "pnpm --filter @lotta/api build",
+    "build:admin": "pnpm --filter @lotta/admin build",
+    "build:menu": "pnpm --filter @lotta/menu build",
+    "db:migrate": "pnpm --filter @lotta/db migrate",
+    "db:seed": "pnpm --filter @lotta/db seed",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
