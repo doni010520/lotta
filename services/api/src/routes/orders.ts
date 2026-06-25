@@ -64,8 +64,30 @@ export async function orderRoutes(app: FastifyInstance) {
 
       if (error || !product) return reply.status(400).send({ error: `Produto ${item.product_id} não encontrado ou inativo` });
 
-      const unitPrice = product.promo_price ?? product.price;
-      const optionsTotal = item.options.reduce((s, o) => s + o.price, 0);
+      const unitPrice = Number(product.promo_price ?? product.price);
+
+      // Recompute option prices from DB — never trust prices from authenticated staff client
+      let optionsTotal = 0;
+      const resolvedOptions: any[] = [];
+      if (item.options.length) {
+        const { data: dbOptions } = await request.supabaseAdmin
+          .from("options")
+          .select("name, price, option_groups!inner(name, product_id)")
+          .eq("restaurant_id", restaurantId)
+          .eq("is_active", true)
+          .eq("option_groups.product_id", product.id);
+
+        for (const sel of item.options) {
+          const match = (dbOptions ?? []).find(
+            (o: any) => o.name === sel.option_name && (o as any).option_groups?.name === sel.group_name
+          );
+          if (!match) return reply.status(400).send({ error: `Opção inválida: ${sel.option_name}` });
+          const optPrice = Number((match as any).price);
+          optionsTotal += optPrice;
+          resolvedOptions.push({ group_name: sel.group_name, option_name: sel.option_name, price: optPrice });
+        }
+      }
+
       const itemTotal = (unitPrice + optionsTotal) * item.quantity;
       subtotal += itemTotal;
 
@@ -75,7 +97,7 @@ export async function orderRoutes(app: FastifyInstance) {
         quantity: item.quantity,
         unit_price: unitPrice,
         total_price: itemTotal,
-        options: item.options,
+        options: resolvedOptions,
         notes: item.notes || null,
       });
     }

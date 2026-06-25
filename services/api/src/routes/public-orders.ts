@@ -11,7 +11,7 @@ const publicOrderSchema = z.object({
   customer_phone: z.string().min(8).max(20),
   delivery_address: z.record(z.unknown()).optional().nullable(),
   zone_id: z.string().uuid().optional().nullable(),
-  payment_method: z.enum(["pix", "credit_card", "cash", "card_on_delivery"]),
+  payment_method: z.enum(["pix", "cash", "card_on_delivery"]),
   notes: z.string().max(1000).optional().nullable(),
   scheduled_for: z.string().optional().nullable(),
   coupon_code: z.string().max(50).optional().nullable(),
@@ -29,7 +29,8 @@ const publicOrderSchema = z.object({
 
 export async function publicOrderRoutes(app: FastifyInstance) {
   // POST /api/public/orders — checkout do cardápio (sem auth, cliente anônimo)
-  app.post("/orders", async (request, reply) => {
+  // Rate limit: 15 pedidos/min por IP para coibir spam de pedidos e cobranças no gateway
+  app.post("/orders", { config: { rateLimit: { max: 15, timeWindow: "1 minute" } } }, async (request, reply) => {
     const parsed = publicOrderSchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.flatten() });
     const input = parsed.data;
@@ -142,8 +143,8 @@ export async function publicOrderRoutes(app: FastifyInstance) {
       customer = created;
     }
 
-    // 6. Determine status (online payments stay pending until confirmed)
-    const isPaidOnline = input.payment_method === "pix" || input.payment_method === "credit_card";
+    // 6. Determine status (pix fica pending até confirmação do gateway)
+    const isPaidOnline = input.payment_method === "pix";
     const status = isPaidOnline ? "pending" : "confirmed";
     const paymentStatus = isPaidOnline ? "pending" : "paid";
 

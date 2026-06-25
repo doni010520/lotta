@@ -226,7 +226,6 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
               <div className="space-y-1 mb-4">
                 {[
                   { value: "pix", label: "Pix" },
-                  { value: "credit_card", label: "Cartão de crédito" },
                   { value: "cash", label: "Dinheiro na entrega" },
                   { value: "card_on_delivery", label: "Maquininha na entrega" },
                 ].map((pm) => (

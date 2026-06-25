@@ -9,7 +9,8 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SE
 // gateway (token/assinatura + reconsulta) antes de marcar o pedido como pago.
 export async function paymentRoutes(app: FastifyInstance) {
   // POST /api/payments/pix — gera cobrança Pix para um pedido existente
-  app.post("/pix", async (request, reply) => {
+  // Rate limit: 10/min por IP para evitar spam de cobranças no gateway
+  app.post("/pix", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const { order_id } = (request.body as any) ?? {};
     if (!order_id || typeof order_id !== "string") {
       return reply.status(400).send({ error: "order_id obrigatório" });

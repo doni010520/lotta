@@ -20,22 +20,36 @@ export async function campaignApiRoutes(app: FastifyInstance) {
   app.post("/:id/send", async (request, reply) => {
     const { id } = request.params as any;
 
-    const { data: campaign, error } = await request.supabase
+    // Atomic: only updates if status IS 'draft' — prevents TOCTOU race where
+    // two concurrent requests both pass the status check and enqueue twice.
+    const { data: updated, error } = await request.supabase
       .from("campaigns")
-      .select("id, status")
+      .update({ status: "scheduled" })
       .eq("id", id)
       .eq("restaurant_id", request.restaurantId)
-      .single();
+      .eq("status", "draft")
+      .select("id")
+      .maybeSingle();
 
-    if (error || !campaign) return reply.status(404).send({ error: "Campanha não encontrada" });
-    if (campaign.status !== "draft") return reply.status(400).send({ error: "Campanha já enviada ou cancelada" });
+    if (error) return reply.status(500).send({ error: error.message });
+    if (!updated) {
+      // Either not found, wrong restaurant, or already scheduled/sent
+      const { data: existing } = await request.supabase
+        .from("campaigns")
+        .select("status")
+        .eq("id", id)
+        .eq("restaurant_id", request.restaurantId)
+        .maybeSingle();
+      if (!existing) return reply.status(404).send({ error: "Campanha não encontrada" });
+      return reply.status(409).send({ error: "Campanha já enviada ou cancelada" });
+    }
 
-    await request.supabase.from("campaigns").update({ status: "scheduled" }).eq("id", id);
-
-    await getQueue().add("send-campaign", {
-      campaignId: id,
-      restaurantId: request.restaurantId,
-    });
+    // jobId deduplicates: if this job already exists in queue, BullMQ ignores the second add.
+    await getQueue().add(
+      "send-campaign",
+      { campaignId: id, restaurantId: request.restaurantId },
+      { jobId: `campaign-${id}` },
+    );
 
     return { queued: true };
   });

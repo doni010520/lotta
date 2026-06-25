@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
 import { supabasePlugin } from "./plugins/supabase";
 import { authRoutes } from "./routes/auth";
 import { restaurantRoutes } from "./routes/restaurants";
@@ -25,6 +26,8 @@ const ALLOWED_ORIGINS = [
 ].filter(Boolean);
   await app.register(cors, { origin: ALLOWED_ORIGINS });
   await app.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+  // Global rate limit — 200 req/min per IP (overridden per route where needed)
+  await app.register(rateLimit, { max: 200, timeWindow: "1 minute", keyGenerator: (req) => req.ip });
   await app.register(supabasePlugin);
 
   await app.register(authRoutes, { prefix: "/api/auth" });
