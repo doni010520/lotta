@@ -1,5 +1,5 @@
-import type { NextConfig } from "next";
-const config: NextConfig = {
+/** @type {import('next').NextConfig} */
+const config = {
   output: "standalone",
   images: { remotePatterns: [{ protocol: "https", hostname: "**" }] },
 };
