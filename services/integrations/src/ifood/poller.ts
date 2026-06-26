@@ -9,12 +9,7 @@ export async function startIFoodPolling() {
 
   async function poll() {
     try {
-      // Get all active iFood integrations
-      const { data: integrations } = await supabase
-        .from("whatsapp_instances") // reusing table pattern — should be a dedicated integrations table
-        .rpc("get_ifood_integrations"); // we'll use restaurant metadata instead
-
-      // Actually, get from restaurants with ifood credentials in metadata
+      // Get all restaurants with iFood credentials in metadata
       const { data: restaurants } = await supabase
         .from("restaurants")
         .select("id, metadata")
