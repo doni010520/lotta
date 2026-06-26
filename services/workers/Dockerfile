@@ -17,6 +17,5 @@ COPY packages/shared packages/shared
 COPY services/workers services/workers
 WORKDIR /app/services/workers
 EXPOSE 3005
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://localhost:3005/health || exit 1
 USER node
 CMD ["node", "--import", "tsx", "src/server.ts"]
