@@ -1,8 +1,11 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import { startIFoodPolling } from "./ifood/poller";
 
 const app = Fastify({ logger: true });
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const configured = !!SUPABASE_URL && !!SUPABASE_KEY;
 
 async function start() {
   const ALLOWED_ORIGINS = [
@@ -11,14 +14,23 @@ async function start() {
   ].filter(Boolean);
   await app.register(cors, { origin: ALLOWED_ORIGINS });
 
-  app.get("/health", async () => ({ service: "lotta-integrations", version: "0.0.1" }));
+  app.get("/health", async () => ({
+    service: "lotta-integrations",
+    version: "0.0.1",
+    configured,
+  }));
 
-  // Start iFood polling
-  startIFoodPolling();
+  if (configured) {
+    const { startIFoodPolling } = await import("./ifood/poller");
+    startIFoodPolling();
 
-  // Start 99Food polling
-  const { start99FoodPolling } = await import("./ninety9food/poller");
-  start99FoodPolling();
+    const { start99FoodPolling } = await import("./ninety9food/poller");
+    start99FoodPolling();
+  } else {
+    console.warn(
+      "[integrations] Missing env vars — pollers disabled. Required: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY"
+    );
+  }
 
   const port = parseInt(process.env.INTEGRATIONS_PORT || "3004");
   await app.listen({ port, host: "0.0.0.0" });
