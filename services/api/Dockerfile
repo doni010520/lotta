@@ -17,6 +17,5 @@ COPY packages/shared packages/shared
 COPY services/api services/api
 WORKDIR /app/services/api
 EXPOSE 3001
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://localhost:3001/api/health || exit 1
 USER node
 CMD ["node", "--import", "tsx", "src/server.ts"]
