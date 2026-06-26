@@ -17,6 +17,5 @@ COPY packages/shared packages/shared
 COPY services/ads-engine services/ads-engine
 WORKDIR /app/services/ads-engine
 EXPOSE 3006
-HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://localhost:3006/health || exit 1
 USER node
 CMD ["node", "--import", "tsx", "src/server.ts"]
