@@ -10,7 +10,7 @@ export function CountUp({
   value,
   prefix = "",
   suffix = "",
-  duration = 1400,
+  duration = 2200,
   className = "",
 }: {
   value: number;
@@ -47,7 +47,8 @@ export function CountUp({
           io.disconnect();
         }
       },
-      { threshold: 0.4 },
+      // dispara só quando a seção entrou bem na tela (não na borda)
+      { threshold: 0, rootMargin: "0px 0px -25% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
