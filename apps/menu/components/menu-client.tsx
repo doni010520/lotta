@@ -21,9 +21,15 @@ export function MenuClient({ restaurant, categories, products, zones, topProduct
   const [search, setSearch] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showCart, setShowCart] = useState(false);
-  const { itemCount, subtotal } = useCart();
+  const { items, itemCount, subtotal } = useCart();
 
   const topProducts = products.filter((p) => topProductIds.includes(p.id));
+
+  // Upsell: mais pedidos (ou primeiros) que ainda não estão no carrinho
+  const cartProductIds = new Set(items.map((i) => i.productId));
+  const suggestions = (topProducts.length ? topProducts : products)
+    .filter((p) => !cartProductIds.has(p.id))
+    .slice(0, 6);
 
   const filtered = products.filter((p) => {
     if (selectedCat && p.category_id !== selectedCat) return false;
@@ -192,6 +198,8 @@ export function MenuClient({ restaurant, categories, products, zones, topProduct
           slug={restaurant.slug}
           minOrder={restaurant.min_order}
           zones={zones}
+          suggestions={suggestions}
+          onPickSuggestion={(p) => setSelectedProduct(p)}
           onClose={() => setShowCart(false)}
         />
       )}

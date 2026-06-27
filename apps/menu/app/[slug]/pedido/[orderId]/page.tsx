@@ -153,6 +153,9 @@ export default function OrderTrackingPage({ params }: Props) {
           {order.discount > 0 && (
             <div className="flex justify-between text-green-600"><span>Desconto</span><span>-{formatCurrency(order.discount)}</span></div>
           )}
+          {order.loyalty_redeemed > 0 && (
+            <div className="flex justify-between text-green-600"><span>Cashback</span><span>-{formatCurrency(order.loyalty_redeemed)}</span></div>
+          )}
           <div className="flex justify-between font-semibold text-base border-t border-cafe/10 pt-2">
             <span>Total</span><span>{formatCurrency(order.total)}</span>
           </div>

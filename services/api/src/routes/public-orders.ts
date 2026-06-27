@@ -15,6 +15,8 @@ const publicOrderSchema = z.object({
   notes: z.string().max(1000).optional().nullable(),
   scheduled_for: z.string().optional().nullable(),
   coupon_code: z.string().max(50).optional().nullable(),
+  // valor de saldo de fidelidade (cashback) que o cliente quer resgatar; validado no servidor
+  redeem_amount: z.number().min(0).max(100000).optional().nullable(),
   items: z.array(z.object({
     product_id: z.string().uuid(),
     quantity: z.number().int().min(1).max(99),
@@ -124,8 +126,6 @@ export async function publicOrderRoutes(app: FastifyInstance) {
       if (couponResult?.valid) discount = Math.min(Number(couponResult.discount ?? 0), subtotal);
     }
 
-    const total = Math.max(0, subtotal + deliveryFee - discount);
-
     // 5. Find or create customer
     const phone = input.customer_phone.replace(/\D/g, "");
     let { data: customer } = await db
@@ -143,6 +143,41 @@ export async function publicOrderRoutes(app: FastifyInstance) {
       customer = created;
     }
 
+    // 5b. Resgate de fidelidade (cashback) — validado e debitado no servidor.
+    // Só vale para programas de cashback (saldo em R$, 1:1 como desconto).
+    let loyaltyRedeemed = 0;
+    const requestedRedeem = Number(input.redeem_amount ?? 0);
+    if (requestedRedeem > 0 && customer?.id) {
+      const { data: program } = await db
+        .from("loyalty_programs")
+        .select("type, is_active, min_redeem")
+        .eq("restaurant_id", restaurantId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (program?.type === "cashback") {
+        const { data: bal } = await db
+          .from("loyalty_balances")
+          .select("balance")
+          .eq("restaurant_id", restaurantId)
+          .eq("customer_id", customer.id)
+          .maybeSingle();
+        const available = Number(bal?.balance ?? 0);
+        const cap = Math.max(0, subtotal + deliveryFee - discount); // nunca deixa o total negativo
+        const candidate = Math.round(Math.min(requestedRedeem, available, cap) * 100) / 100;
+        if (candidate > 0 && candidate >= Number(program.min_redeem ?? 0)) {
+          // RPC debita o saldo de forma atômica (re-checa saldo); só aplica desconto se OK
+          const { data: ok } = await db.rpc("redeem_loyalty", {
+            p_restaurant_id: restaurantId,
+            p_customer_id: customer.id,
+            p_amount: candidate,
+          });
+          if (ok === true) loyaltyRedeemed = candidate;
+        }
+      }
+    }
+
+    const total = Math.max(0, subtotal + deliveryFee - discount - loyaltyRedeemed);
+
     // 6. Determine status (pix fica pending até confirmação do gateway)
     const isPaidOnline = input.payment_method === "pix";
     const status = isPaidOnline ? "pending" : "confirmed";
@@ -158,6 +193,7 @@ export async function publicOrderRoutes(app: FastifyInstance) {
         payment_method: input.payment_method,
         payment_status: paymentStatus,
         subtotal, delivery_fee: deliveryFee, discount, total,
+        loyalty_redeemed: loyaltyRedeemed,
         delivery_address: input.delivery_address || null,
         customer_name: input.customer_name,
         customer_phone: phone,
@@ -183,5 +219,43 @@ export async function publicOrderRoutes(app: FastifyInstance) {
     onOrderCreated(db, order!.id, restaurantId).catch((err) => app.log.error({ err }, "onOrderCreated falhou"));
 
     return reply.status(201).send({ id: order!.id, order_number: order!.order_number, total: order!.total });
+  });
+
+  // POST /api/public/loyalty/balance — saldo de cashback do cliente (por telefone)
+  // Usado no checkout para oferecer o resgate. Rate-limit p/ evitar enumeração de telefones.
+  app.post("/loyalty/balance", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const { restaurant_slug, phone } = (request.body || {}) as any;
+    if (!restaurant_slug || !phone) return reply.status(400).send({ error: "Dados insuficientes" });
+    const db = request.supabaseAdmin;
+
+    const { data: restaurant } = await db.from("restaurants").select("id").eq("slug", restaurant_slug).single();
+    if (!restaurant) return reply.status(404).send({ error: "Restaurante não encontrado" });
+
+    const { data: program } = await db
+      .from("loyalty_programs")
+      .select("type, is_active, min_redeem")
+      .eq("restaurant_id", restaurant.id)
+      .eq("is_active", true)
+      .maybeSingle();
+    // Resgate no checkout só faz sentido para cashback (saldo em R$)
+    if (!program || program.type !== "cashback") return { enabled: false, balance: 0 };
+
+    const cleanPhone = String(phone).replace(/\D/g, "");
+    const { data: customer } = await db
+      .from("customers")
+      .select("id")
+      .eq("restaurant_id", restaurant.id)
+      .eq("phone", cleanPhone)
+      .maybeSingle();
+    if (!customer) return { enabled: true, balance: 0, min_redeem: Number(program.min_redeem ?? 0) };
+
+    const { data: bal } = await db
+      .from("loyalty_balances")
+      .select("balance")
+      .eq("restaurant_id", restaurant.id)
+      .eq("customer_id", customer.id)
+      .maybeSingle();
+
+    return { enabled: true, balance: Number(bal?.balance ?? 0), min_redeem: Number(program.min_redeem ?? 0) };
   });
 }

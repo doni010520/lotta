@@ -29,6 +29,7 @@ export interface CreateOrderPayload {
   notes?: string | null;
   scheduled_for?: string | null;
   coupon_code?: string | null;
+  redeem_amount?: number | null;
   items: {
     product_id: string;
     quantity: number;
@@ -52,4 +53,23 @@ export async function createOrder(payload: CreateOrderPayload): Promise<{
   const data = await res.json();
   if (!res.ok) return { error: data.error || "Erro ao criar pedido" };
   return data;
+}
+
+// Consulta o saldo de cashback do cliente (por telefone) para oferecer resgate no checkout.
+export async function getLoyaltyBalance(restaurant_slug: string, phone: string): Promise<{
+  enabled: boolean;
+  balance: number;
+  min_redeem?: number;
+}> {
+  try {
+    const res = await fetch(`${API_URL}/api/public/loyalty/balance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restaurant_slug, phone }),
+    });
+    if (!res.ok) return { enabled: false, balance: 0 };
+    return res.json();
+  } catch {
+    return { enabled: false, balance: 0 };
+  }
 }

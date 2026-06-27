@@ -1,19 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { X, Minus, Plus, Trash2, Clock, MapPin, CreditCard } from "lucide-react";
+import { X, Minus, Plus, Trash2, Clock, MapPin, CreditCard, Gift } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { createOrder, requestPixPayment } from "@/lib/payment-client";
+import { createOrder, requestPixPayment, getLoyaltyBalance } from "@/lib/payment-client";
 import { Sheet } from "./sheet";
+import { ProductImage } from "./product-image";
 
 interface Props {
   slug: string;
   minOrder: number;
   zones: any[];
   onClose: () => void;
+  /** Produtos sugeridos (upsell) que não estão no carrinho */
+  suggestions?: any[];
+  /** Abre o modal de um produto com opções (upsell de item configurável) */
+  onPickSuggestion?: (product: any) => void;
 }
 
 type Step = "cart" | "address" | "payment" | "pix";
@@ -21,9 +26,11 @@ type Step = "cart" | "address" | "payment" | "pix";
 const inputClass =
   "w-full border border-cafe/10 rounded-lg px-3 py-2.5 text-sm text-cafe placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-paprica/25";
 
-export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
-  const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
+export function CartDrawer({ slug, minOrder, zones, onClose, suggestions = [], onPickSuggestion }: Props) {
+  const { items, addItem, removeItem, updateQuantity, subtotal, clearCart } = useCart();
   const [step, setStep] = useState<Step>("cart");
+  const [loyalty, setLoyalty] = useState<{ enabled: boolean; balance: number; min_redeem?: number }>({ enabled: false, balance: 0 });
+  const [applyRedeem, setApplyRedeem] = useState(false);
   const [address, setAddress] = useState({ street: "", number: "", complement: "", neighborhood: "", zip: "" });
   const [selectedZone, setSelectedZone] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("pix");
@@ -37,7 +44,30 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
   const router = useRouter();
 
   const deliveryFee = selectedZone?.fee ?? 0;
-  const total = subtotal + deliveryFee;
+  const redeemApplied = applyRedeem ? Math.min(loyalty.balance, subtotal + deliveryFee) : 0;
+  const total = Math.max(0, subtotal + deliveryFee - redeemApplied);
+
+  // Quick-add de upsell: item sem opções entra direto; com opções abre o modal
+  function pickSuggestion(prod: any) {
+    const hasOptions = (prod.option_groups ?? []).length > 0;
+    if (hasOptions) {
+      onPickSuggestion?.(prod);
+      onClose();
+      return;
+    }
+    const unitPrice = prod.promo_price ?? prod.price;
+    addItem({
+      productId: prod.id,
+      productName: prod.name,
+      unitPrice,
+      quantity: 1,
+      imageUrl: prod.image_url ?? null,
+      options: [],
+      notes: "",
+      totalPrice: unitPrice,
+    });
+    toast.success(`${prod.name} adicionado`);
+  }
 
   // mínimo do agendamento = agora (horário local), evita agendar no passado
   const now = new Date();
@@ -70,6 +100,7 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
         payment_method: paymentMethod,
         notes: notes || null,
         scheduled_for: scheduledFor || null,
+        redeem_amount: redeemApplied || null,
         items: items.map((item) => ({
           product_id: item.productId,
           quantity: item.quantity,
@@ -104,6 +135,16 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
       toast.error(err.message || "Erro ao criar pedido");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function goToPayment() {
+    if (!selectedZone) { toast.error("Selecione a zona de entrega"); return; }
+    setStep("payment");
+    if (customerPhone) {
+      const bal = await getLoyaltyBalance(slug, customerPhone);
+      setLoyalty(bal);
+      if (!bal.balance) setApplyRedeem(false);
     }
   }
 
@@ -150,6 +191,24 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {items.length > 0 && suggestions.length > 0 && (
+              <div className="mb-4">
+                <p className="text-sm font-medium text-cafe mb-2">Peça também 👀</p>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => pickSuggestion(s)}
+                      className="shrink-0 w-28 text-left border border-cafe/10 rounded-xl p-2 hover:border-paprica/30 transition-colors"
+                    >
+                      <ProductImage src={s.image_url} alt={s.name} sizes="112px" className="w-full h-16 rounded-lg mb-1" />
+                      <p className="text-xs font-medium text-cafe line-clamp-1">{s.name}</p>
+                      <p className="text-xs text-paprica font-semibold">{formatCurrency(s.promo_price ?? s.price)}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {items.length > 0 && (
@@ -239,7 +298,7 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
             <div className="flex gap-2">
               <button onClick={() => setStep("cart")} className="flex-1 border border-cafe/10 rounded-xl py-3 text-sm text-cafe hover:bg-creme transition-colors">Voltar</button>
               <button
-                onClick={() => (selectedZone ? setStep("payment") : toast.error("Selecione a zona de entrega"))}
+                onClick={goToPayment}
                 className="flex-1 bg-paprica text-white rounded-xl py-3 text-sm font-medium hover:bg-paprica-dark transition-colors"
               >
                 Continuar
@@ -282,10 +341,29 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
               />
             </div>
 
+            {/* Resgate de cashback */}
+            {loyalty.enabled && loyalty.balance > 0 && (
+              <label className="flex items-center justify-between gap-2 mb-4 p-3 rounded-lg border border-gema/40 bg-gema/10 cursor-pointer">
+                <span className="flex items-center gap-2 text-sm text-cafe">
+                  <Gift className="w-4 h-4 text-gema" aria-hidden="true" />
+                  Usar {formatCurrency(loyalty.balance)} de cashback
+                </span>
+                <input
+                  type="checkbox"
+                  checked={applyRedeem}
+                  onChange={(e) => setApplyRedeem(e.target.checked)}
+                  className="h-4 w-4 accent-paprica"
+                />
+              </label>
+            )}
+
             {/* Summary */}
             <div className="border-t border-cafe/10 pt-3 space-y-1 text-sm mb-4">
               <div className="flex justify-between"><span className="text-muted">Subtotal</span><span className="text-cafe">{formatCurrency(subtotal)}</span></div>
               <div className="flex justify-between"><span className="text-muted">Entrega</span><span className="text-cafe">{formatCurrency(deliveryFee)}</span></div>
+              {redeemApplied > 0 && (
+                <div className="flex justify-between text-green-600"><span>Cashback</span><span>-{formatCurrency(redeemApplied)}</span></div>
+              )}
               <div className="flex justify-between font-semibold text-base text-cafe pt-1 border-t border-cafe/10"><span>Total</span><span>{formatCurrency(total)}</span></div>
             </div>
 

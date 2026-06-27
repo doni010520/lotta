@@ -1288,3 +1288,11 @@ loop
   execute format('create policy "tenant_update_%1$s" on public.%1$I for update using (restaurant_id in (select public.user_restaurant_ids()))', t);
   execute format('create policy "tenant_delete_%1$s" on public.%1$I for delete using (restaurant_id in (select public.user_restaurant_ids()))', t);
 end loop; end; $$;
+
+
+-- ===== 0010_loyalty_redeem.sql =====
+-- ── Sprint 2: resgate de fidelidade no checkout do cliente ──
+-- Guarda o valor de saldo (cashback) resgatado no pedido, separado do desconto de cupom.
+
+alter table public.orders
+  add column if not exists loyalty_redeemed numeric(10,2) not null default 0;
