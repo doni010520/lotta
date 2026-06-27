@@ -3,35 +3,49 @@
 import { useState } from "react";
 
 /**
- * Mostra a logo real do parceiro se o arquivo existir em /partners/.
- * Se não existir (ou falhar), cai no badge com a sigla — nada quebra.
+ * Logo do parceiro num círculo branco. Usa a imagem real de /partners/ se existir;
+ * senão cai no badge com a sigla. `size` controla o diâmetro (px).
  */
 export function PartnerLogo({
   name,
   logo,
   color,
   abbr,
+  size = 32,
+  className = "",
 }: {
   name: string;
   logo?: string;
   color: string;
   abbr: string;
+  size?: number;
+  className?: string;
 }) {
   const [failed, setFailed] = useState(false);
+  const imgSize = Math.round(size * 0.64);
 
   if (logo && !failed) {
-    // eslint-disable-next-line @next/next/no-img-element
     return (
-      <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-white">
-        <img src={logo} alt={name} className="h-7 w-7 object-contain" onError={() => setFailed(true)} />
+      <span
+        className={`grid place-items-center overflow-hidden rounded-full bg-white ${className}`}
+        style={{ width: size, height: size }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={logo}
+          alt={name}
+          onError={() => setFailed(true)}
+          className="object-contain"
+          style={{ width: imgSize, height: imgSize }}
+        />
       </span>
     );
   }
 
   return (
     <span
-      className="grid h-8 w-8 place-items-center rounded-full font-mono text-[10px] font-bold text-white"
-      style={{ backgroundColor: color }}
+      className={`grid place-items-center rounded-full font-mono font-bold text-white ${className}`}
+      style={{ width: size, height: size, backgroundColor: color, fontSize: Math.max(10, Math.round(size * 0.26)) }}
     >
       {abbr}
     </span>
