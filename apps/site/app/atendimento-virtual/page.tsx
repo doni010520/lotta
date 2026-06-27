@@ -37,7 +37,7 @@ export default function Page() {
             <div className="grid h-9 w-9 place-items-center rounded-full bg-white/20 font-display font-bold">L</div>
             <div>
               <div className="text-sm font-semibold">Lotta · Burger Demo</div>
-              <div className="text-xs text-white/70">online agora</div>
+              <div className="flex items-center gap-1.5 text-xs text-white/70"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400" />online agora</div>
             </div>
           </div>
           <div className="space-y-2 bg-[#ECE5DD] p-4">

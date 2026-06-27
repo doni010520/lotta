@@ -35,10 +35,12 @@ const config: Config = {
       keyframes: {
         float: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-8px)" } },
         fadeUp: { from: { opacity: "0", transform: "translateY(24px)" }, to: { opacity: "1", transform: "translateY(0)" } },
+        marquee: { from: { transform: "translateX(0)" }, to: { transform: "translateX(-50%)" } },
       },
       animation: {
         float: "float 6s ease-in-out infinite",
         fadeUp: "fadeUp .6s ease-out both",
+        marquee: "marquee 32s linear infinite",
       },
     },
   },

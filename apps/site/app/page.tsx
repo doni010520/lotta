@@ -6,6 +6,7 @@ import {
 import { SiteShell } from "@/components/site-shell";
 import { CtaSection } from "@/components/cta-section";
 import { SectionHeading, DiffCard, Badge } from "@/components/ui";
+import { Reveal } from "@/components/reveal";
 
 export const dynamic = "force-static";
 
@@ -79,6 +80,7 @@ export default function HomePage() {
     <SiteShell>
       {/* HERO */}
       <section id="top" className="mx-auto max-w-content px-6 pb-20 pt-[120px] text-center">
+        <Reveal>
         <Badge>Plataforma de delivery 100% integrada com IA</Badge>
         <h1 className="mx-auto mt-7 max-w-3xl font-display text-4xl font-bold leading-[1.08] tracking-tight text-cafe md:text-6xl">
           Seu delivery <span className="text-paprica">lota</span> quando o cliente é <span className="italic text-paprica">seu.</span>
@@ -99,11 +101,12 @@ export default function HomePage() {
           <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-paprica" /> Sem multa</span>
           <span className="inline-flex items-center gap-1.5"><Check className="h-4 w-4 text-paprica" /> Migração facilitada</span>
         </div>
+        </Reveal>
       </section>
 
       {/* DASHBOARD MOCKUP */}
       <section className="mx-auto mb-20 max-w-5xl px-6">
-        <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-cafe to-cafe-soft p-6 shadow-dashboard md:p-8">
+        <div className="animate-float overflow-hidden rounded-2xl bg-gradient-to-br from-cafe to-cafe-soft p-6 shadow-dashboard md:p-8">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {KPIS.map((k) => (
               <div key={k.label} className="rounded-card bg-white/[0.08] p-4">
@@ -207,15 +210,17 @@ export default function HomePage() {
           title={<>Conecta com o que <span className="text-paprica">você já usa.</span></>}
           subtitle="iFood, 99Food, PDVs, marketing e logística — tudo num lugar só."
         />
-        <div className="flex flex-wrap justify-center gap-3">
-          {INTEGRATIONS.map((i) => (
-            <div key={i.name} className="flex items-center gap-2.5 rounded-pill border border-black/5 bg-white py-2 pl-2 pr-4">
-              <span className="grid h-8 w-8 place-items-center rounded-full font-mono text-[10px] font-bold text-white" style={{ backgroundColor: i.color }}>
-                {i.abbr}
-              </span>
-              <span className="text-sm font-medium text-cafe">{i.name}</span>
-            </div>
-          ))}
+        <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+          <div className="flex w-max animate-marquee gap-3">
+            {[...INTEGRATIONS, ...INTEGRATIONS].map((i, idx) => (
+              <div key={`${i.name}-${idx}`} className="flex shrink-0 items-center gap-2.5 rounded-pill border border-black/5 bg-white py-2 pl-2 pr-4">
+                <span className="grid h-8 w-8 place-items-center rounded-full font-mono text-[10px] font-bold text-white" style={{ backgroundColor: i.color }}>
+                  {i.abbr}
+                </span>
+                <span className="text-sm font-medium text-cafe">{i.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

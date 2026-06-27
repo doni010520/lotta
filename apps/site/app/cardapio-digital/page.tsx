@@ -26,7 +26,7 @@ export default function Page() {
         <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-dashboard">
           <div className="bg-paprica px-4 py-4 text-white">
             <div className="font-display text-lg font-bold">Burger Demo</div>
-            <div className="text-xs text-white/80">● Aberto · ~30 min</div>
+            <div className="flex items-center gap-1.5 text-xs text-white/80"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-300" />Aberto · ~30 min</div>
           </div>
           <div className="p-4">
             <div className="mb-3 flex items-center gap-2 rounded-btn bg-creme px-3 py-2 text-sm text-muted">
