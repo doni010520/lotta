@@ -36,6 +36,7 @@ const config: Config = {
         float: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-8px)" } },
         fadeUp: { from: { opacity: "0", transform: "translateY(24px)" }, to: { opacity: "1", transform: "translateY(0)" } },
         marquee: { from: { transform: "translateX(0)" }, to: { transform: "translateX(-50%)" } },
+        orbit: { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } },
       },
       animation: {
         float: "float 6s ease-in-out infinite",
