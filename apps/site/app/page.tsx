@@ -86,7 +86,7 @@ export default function HomePage() {
         <Reveal>
         <Badge>Plataforma de delivery 100% integrada com IA</Badge>
         <h1 className="mx-auto mt-7 max-w-3xl font-display text-4xl font-bold leading-[1.08] tracking-tight text-cafe md:text-6xl">
-          Seu delivery <span className="text-paprica">lota</span> quando o cliente é <span className="italic text-paprica">seu.</span>
+          A plataforma que <span className="text-paprica">lota</span> o seu delivery.
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-base text-muted md:text-xl">
           Do pedido à fidelização, o Lotta cuida de tudo. Seu cliente compra mais, volta sempre e é seu — não do app.
