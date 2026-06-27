@@ -1,18 +1,17 @@
 # Agendamento dos jobs da Lotta (busybox cron — 5 campos).
-# $CRON_SECRET é injetado pelo entrypoint a partir da env do container.
-# Hosts internos seguem o padrão do EasyPanel: <projeto>_<servico>.
+# $WORKERS_URL, $ADS_URL e $CRON_SECRET são injetados pelo entrypoint a partir da env.
 
 # Disparos agendados (campanhas) — a cada minuto
-* * * * * curl -fsS "http://lotta_lotta-workers:3005/cron/campaigns-due?secret=$CRON_SECRET" >/dev/null 2>&1
+* * * * * curl -fsS "$WORKERS_URL/cron/campaigns-due?secret=$CRON_SECRET" >/dev/null 2>&1
 # Recuperação (carrinho abandonado + win-back) — a cada 15 min
-*/15 * * * * curl -fsS "http://lotta_lotta-workers:3005/cron/recovery?secret=$CRON_SECRET" >/dev/null 2>&1
+*/15 * * * * curl -fsS "$WORKERS_URL/cron/recovery?secret=$CRON_SECRET" >/dev/null 2>&1
 # Segmentação RFM — a cada 6 horas
-0 */6 * * * curl -fsS "http://lotta_lotta-workers:3005/cron/segmentation?secret=$CRON_SECRET" >/dev/null 2>&1
+0 */6 * * * curl -fsS "$WORKERS_URL/cron/segmentation?secret=$CRON_SECRET" >/dev/null 2>&1
 # Expiração de pontos/cashback — diária 03:00
-0 3 * * * curl -fsS "http://lotta_lotta-workers:3005/cron/loyalty-expire?secret=$CRON_SECRET" >/dev/null 2>&1
+0 3 * * * curl -fsS "$WORKERS_URL/cron/loyalty-expire?secret=$CRON_SECRET" >/dev/null 2>&1
 # Tráfego: criativos da semana — segunda 04:00
-0 4 * * 1 curl -fsS "http://lotta_lotta-ads-engine:3006/cron/ads-weekly?secret=$CRON_SECRET" >/dev/null 2>&1
+0 4 * * 1 curl -fsS "$ADS_URL/cron/ads-weekly?secret=$CRON_SECRET" >/dev/null 2>&1
 # Tráfego: métricas — diária 03:30
-30 3 * * * curl -fsS "http://lotta_lotta-ads-engine:3006/cron/ads-metrics?secret=$CRON_SECRET" >/dev/null 2>&1
+30 3 * * * curl -fsS "$ADS_URL/cron/ads-metrics?secret=$CRON_SECRET" >/dev/null 2>&1
 # Relatórios: insights de feedback (IA) — diária 05:00
-0 5 * * * curl -fsS "http://lotta_lotta-ads-engine:3006/cron/feedback-insights?secret=$CRON_SECRET" >/dev/null 2>&1
+0 5 * * * curl -fsS "$ADS_URL/cron/feedback-insights?secret=$CRON_SECRET" >/dev/null 2>&1
