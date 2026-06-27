@@ -1,0 +1,4 @@
+# Garante LF (o container Alpine quebra com CRLF no shebang/crontab)
+*.sh text eol=lf
+crontab text eol=lf
+entrypoint.sh text eol=lf
