@@ -1,5 +1,5 @@
-const WA_URL = process.env.WHATSAPP_INTERNAL_URL || "http://lotta_lotta-whatsapp:3003";
-const ADS_URL = process.env.ADS_INTERNAL_URL || "http://lotta_lotta-ads-engine:3006";
+const WA_URL = process.env.WHATSAPP_INTERNAL_URL || "http://prospeccao-cnpj_lotta-whatsapp:3003";
+const ADS_URL = process.env.ADS_INTERNAL_URL || "http://prospeccao-cnpj_lotta-ads-engine:3006";
 const SECRET = process.env.INTERNAL_API_SECRET;
 
 async function internalPost(service: string, path: string, body: any) {
