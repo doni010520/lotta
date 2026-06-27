@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase-browser";
 
-const LOGO_SVG = `<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><defs><linearGradient id="ab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6A4D"/><stop offset="1" stop-color="#C32E1C"/></linearGradient><linearGradient id="as" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD86"/><stop offset="1" stop-color="#FFA51F"/></linearGradient></defs><path d="M16 19 c-2.7-2.3 2.7-4.6 0-6.9c-2.7-2.3 2.7-4.6 0-6.9" stroke="#E5402A" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/><path d="M24 17 c-2.7-2.3 2.7-4.6 0-6.9c-2.7-2.3 2.7-4.6 0-6.9" stroke="#E5402A" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/><path d="M32 19 c-2.7-2.3 2.7-4.6 0-6.9c-2.7-2.3 2.7-4.6 0-6.9" stroke="#E5402A" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/><path d="M5 22C5.5 33 13 42 24 42C35 42 42.5 33 43 22Z" fill="url(#ab)"/><ellipse cx="16.5" cy="30" rx="4" ry="7.5" fill="#fff" opacity=".16" transform="rotate(-20 16.5 30)"/><ellipse cx="24" cy="22" rx="18.5" ry="4.6" fill="url(#as)"/></svg>`;
+// ids de gradiente únicos por instância (evita colisão quando o logo aparece 2x na página)
+const logoSvg = (s: string) => `<svg width="48" height="48" viewBox="0 0 48 48" fill="none"><defs><linearGradient id="ab-${s}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6A4D"/><stop offset="1" stop-color="#C32E1C"/></linearGradient><linearGradient id="as-${s}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDD86"/><stop offset="1" stop-color="#FFA51F"/></linearGradient></defs><path d="M16 19 c-2.7-2.3 2.7-4.6 0-6.9c-2.7-2.3 2.7-4.6 0-6.9" stroke="#E5402A" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/><path d="M24 17 c-2.7-2.3 2.7-4.6 0-6.9c-2.7-2.3 2.7-4.6 0-6.9" stroke="#E5402A" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/><path d="M32 19 c-2.7-2.3 2.7-4.6 0-6.9c-2.7-2.3 2.7-4.6 0-6.9" stroke="#E5402A" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".5"/><path d="M5 22C5.5 33 13 42 24 42C35 42 42.5 33 43 22Z" fill="url(#ab-${s})"/><ellipse cx="16.5" cy="30" rx="4" ry="7.5" fill="#fff" opacity=".16" transform="rotate(-20 16.5 30)"/><ellipse cx="24" cy="22" rx="18.5" ry="4.6" fill="url(#as-${s})"/></svg>`;
 
 const FEATURES = [
   "Pedidos em tempo real, do balcão à entrega",
@@ -63,9 +64,9 @@ export default function AuthPage() {
     "w-full border border-cafe/10 bg-white rounded-btn px-3.5 py-3 text-sm text-body placeholder:text-neutral focus:ring-2 focus:ring-paprica/25 focus:border-paprica outline-none transition-colors";
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-2">
+    <div className="min-h-dvh md:grid md:grid-cols-2">
       {/* ── Left: brand showcase imagery ── */}
-      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden p-12 text-white">
+      <aside className="relative hidden md:flex flex-col justify-between overflow-hidden p-10 lg:p-12 text-white">
         <Image
           src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1400&q=80"
           alt="Pratos preparados em um restaurante"
@@ -80,7 +81,7 @@ export default function AuthPage() {
         <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-gema/30 blur-3xl" aria-hidden="true" />
 
         <div className="relative flex items-center gap-3">
-          <span className="grid place-items-center h-11 w-11 rounded-card bg-white/15 backdrop-blur-sm" dangerouslySetInnerHTML={{ __html: LOGO_SVG }} />
+          <span className="grid place-items-center h-11 w-11 rounded-card bg-white/15 backdrop-blur-sm" dangerouslySetInnerHTML={{ __html: logoSvg("left") }} />
           <span className="font-display font-bold text-2xl tracking-tight">Lotta<span className="text-gema">.</span></span>
         </div>
 
@@ -106,11 +107,11 @@ export default function AuthPage() {
       </aside>
 
       {/* ── Right: auth form ── */}
-      <main className="flex min-h-dvh items-center justify-center bg-creme px-4 py-10 lg:min-h-0">
+      <main className="flex min-h-dvh items-center justify-center bg-creme px-4 py-10 md:min-h-0">
         <div className="w-full max-w-md">
-          {/* mobile-only brand header (left panel is hidden < lg) */}
-          <div className="lg:hidden text-center mb-8">
-            <div className="inline-block mb-2" dangerouslySetInnerHTML={{ __html: LOGO_SVG }} />
+          {/* mobile-only brand header (left panel is hidden < md) */}
+          <div className="md:hidden text-center mb-8">
+            <div className="inline-block mb-2" dangerouslySetInnerHTML={{ __html: logoSvg("top") }} />
             <h1 className="font-display font-bold text-3xl text-cafe tracking-tight">
               Lotta<span className="text-gema-dot">.</span>
             </h1>
