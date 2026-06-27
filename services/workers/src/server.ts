@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import { startSegmentationCron } from "./segmentation";
-import { startCampaignWorker } from "./campaigns";
+import { startCampaignWorker, dispatchScheduledCampaigns } from "./campaigns";
 import { startRecoveryCron } from "./recovery";
 
 const app = Fastify({ logger: true });
@@ -22,6 +22,13 @@ async function start() {
     if (secret !== process.env.CRON_SECRET) return reply.status(401).send("Unauthorized");
     const result = await startRecoveryCron();
     return result;
+  });
+
+  // Cron: dispara campanhas agendadas que já chegaram no horário (a cada ~minuto)
+  app.get("/cron/campaigns-due", async (req, reply) => {
+    const secret = (req.query as any)?.secret;
+    if (secret !== process.env.CRON_SECRET) return reply.status(401).send("Unauthorized");
+    return dispatchScheduledCampaigns();
   });
 
   // Start campaign worker

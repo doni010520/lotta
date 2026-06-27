@@ -74,6 +74,26 @@ export async function handleInboundMessage(msg: InboundMessage) {
     sender_type: "contact",
   });
 
+  // Opt-out de marketing: cliente responde SAIR/PARAR/STOP → desativa consentimento
+  const optOutKeywords = ["sair", "parar", "stop", "cancelar", "descadastrar"];
+  if (optOutKeywords.includes((msg.body || "").trim().toLowerCase())) {
+    const phone = msg.from.replace(/\D/g, "");
+    await supabase
+      .from("customers")
+      .update({ consent_marketing: false, opted_out_at: new Date().toISOString() })
+      .eq("restaurant_id", restaurant.id)
+      .eq("phone", phone);
+    try {
+      const provider = getProvider({
+        provider: instance.provider,
+        credentials: instance.credentials,
+        externalId: instance.external_id,
+      });
+      await provider.sendText({ to: msg.from, text: "Pronto! Você não receberá mais mensagens de marketing. 👋" });
+    } catch (err) { console.error("opt-out reply error:", err); }
+    return; // não aciona o bot
+  }
+
   // Update conversation
   await supabase
     .from("conversations")

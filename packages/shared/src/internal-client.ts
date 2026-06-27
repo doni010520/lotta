@@ -52,3 +52,9 @@ export const reports = {
   feedbackInsights: (restaurant_id: string, period_days = 30) =>
     internalPost("ads", "/api/feedback/insights", { restaurant_id, period_days }),
 };
+
+// ── Cupons inteligentes (sugestão por IA) ──
+export const coupons = {
+  suggest: (restaurant_id: string) =>
+    internalPost("ads", "/api/coupons/suggest", { restaurant_id }),
+};

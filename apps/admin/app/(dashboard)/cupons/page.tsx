@@ -1,15 +1,34 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Plus, Ticket, Trash2 } from "lucide-react";
+import { Plus, Ticket, Trash2, Sparkles } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 export default function CuponsPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
+  const [suggestion, setSuggestion] = useState<any>(null);
+  const [suggesting, setSuggesting] = useState(false);
   const supabase = createClient();
+
+  async function suggestWithAI() {
+    setSuggesting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await api<{ suggestion: any }>("/api/coupons/suggest", { method: "POST", token: session?.access_token });
+      setSuggestion(res.suggestion);
+      setBulkMode(false);
+      setShowForm(true);
+      toast.success("Sugestão da IA pronta — revise e crie");
+    } catch (err: any) {
+      toast.error(err.message || "Falha ao sugerir cupom");
+    } finally {
+      setSuggesting(false);
+    }
+  }
 
   useEffect(() => { load(); }, []);
 
@@ -64,9 +83,14 @@ export default function CuponsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold">Cupons</h1>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 bg-paprica text-white rounded-lg text-sm">
-          <Plus className="w-4 h-4" /> Novo cupom
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={suggestWithAI} disabled={suggesting} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50">
+            <Sparkles className="w-4 h-4 text-paprica" /> {suggesting ? "Sugerindo..." : "Sugerir com IA"}
+          </button>
+          <button onClick={() => { setSuggestion(null); setShowForm(true); }} className="flex items-center gap-2 px-4 py-2 bg-paprica text-white rounded-lg text-sm">
+            <Plus className="w-4 h-4" /> Novo cupom
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -99,30 +123,31 @@ export default function CuponsPage() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <form onSubmit={createCoupon} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
-            <h2 className="text-lg font-semibold">{bulkMode ? "Criar cupons em lote" : "Novo cupom"}</h2>
+          <form key={suggestion?.code || "manual"} onSubmit={createCoupon} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+            <h2 className="text-lg font-semibold">{bulkMode ? "Criar cupons em lote" : suggestion ? "Cupom sugerido pela IA" : "Novo cupom"}</h2>
+            {suggestion?.reason && <p className="text-xs text-gray-600 bg-gema/10 border border-gema/30 rounded-lg p-2">{suggestion.reason}</p>}
 
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={bulkMode} onChange={(e) => setBulkMode(e.target.checked)} className="rounded" />
               Criar em lote
             </label>
 
-            <input name="code" placeholder={bulkMode ? "Prefixo (ex: PROMO)" : "Código (ex: BEMVINDO10)"} required className="w-full border rounded-lg px-3 py-2 text-sm uppercase" />
+            <input name="code" defaultValue={suggestion?.code || ""} placeholder={bulkMode ? "Prefixo (ex: PROMO)" : "Código (ex: BEMVINDO10)"} required className="w-full border rounded-lg px-3 py-2 text-sm uppercase" />
 
             {bulkMode && (
               <input name="bulk_qty" type="number" defaultValue={10} min={1} max={500} placeholder="Quantidade" className="w-full border rounded-lg px-3 py-2 text-sm" />
             )}
 
-            <select name="type" required className="w-full border rounded-lg px-3 py-2 text-sm">
+            <select name="type" defaultValue={suggestion?.type || "percent"} required className="w-full border rounded-lg px-3 py-2 text-sm">
               <option value="percent">Desconto percentual (%)</option>
               <option value="fixed">Desconto fixo (R$)</option>
               <option value="free_delivery">Frete grátis</option>
             </select>
 
-            <input name="value" type="number" step="0.01" min="0" placeholder="Valor (10 = 10% ou R$10)" required className="w-full border rounded-lg px-3 py-2 text-sm" />
+            <input name="value" type="number" step="0.01" min="0" defaultValue={suggestion?.value ?? ""} placeholder="Valor (10 = 10% ou R$10)" required className="w-full border rounded-lg px-3 py-2 text-sm" />
 
             <div className="grid grid-cols-2 gap-3">
-              <input name="min_order" type="number" step="0.01" min="0" placeholder="Pedido mínimo (R$)" className="border rounded-lg px-3 py-2 text-sm" />
+              <input name="min_order" type="number" step="0.01" min="0" defaultValue={suggestion?.min_order ?? ""} placeholder="Pedido mínimo (R$)" className="border rounded-lg px-3 py-2 text-sm" />
               {!bulkMode && <input name="max_uses" type="number" min="1" placeholder="Máx. usos (vazio=ilimitado)" className="border rounded-lg px-3 py-2 text-sm" />}
             </div>
 

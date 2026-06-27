@@ -10,6 +10,29 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const campaignQueue = new Queue("campaigns", { connection: redis });
 
+// Enfileira campanhas agendadas cujo horário já chegou (chamado por cron)
+export async function dispatchScheduledCampaigns() {
+  const now = new Date().toISOString();
+  const { data: due } = await supabase
+    .from("campaigns")
+    .select("id, restaurant_id")
+    .eq("status", "scheduled")
+    .lte("scheduled_at", now)
+    .limit(100);
+
+  let queued = 0;
+  for (const c of due ?? []) {
+    // jobId deduplica: evita enfileirar duas vezes se o cron rodar de novo antes do worker pegar
+    await campaignQueue.add(
+      "send-campaign",
+      { campaignId: c.id, restaurantId: c.restaurant_id },
+      { jobId: `campaign-${c.id}` },
+    );
+    queued++;
+  }
+  return { queued };
+}
+
 export function startCampaignWorker() {
   const worker = new Worker("campaigns", async (job) => {
     const { campaignId, restaurantId } = job.data;
@@ -44,6 +67,9 @@ export function startCampaignWorker() {
         });
         messageBody = varied.choices[0]?.message?.content || messageBody;
         messageBody = messageBody.replace(/{nome}/g, customer.name?.split(" ")[0] || "");
+
+        // Rodapé de opt-out (LGPD / boas práticas anti-ban no WhatsApp)
+        messageBody += "\n\n_Responda SAIR para não receber mais mensagens._";
 
         // Send via WhatsApp internal API
         await wa.sendText(restaurantId, customer.phone, messageBody);

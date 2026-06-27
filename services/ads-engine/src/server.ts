@@ -305,6 +305,39 @@ async function start() {
     return { generated };
   });
 
+  // ── Internal: sugere um cupom estratégico via IA (com base no ticket médio) ──
+  app.post("/api/coupons/suggest", { preHandler: requireInternal }, async (request) => {
+    const { restaurant_id } = request.body as any;
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: orders } = await supabase!.from("orders")
+      .select("total, status").eq("restaurant_id", restaurant_id).gte("created_at", since);
+    const valid = (orders ?? []).filter((o: any) => o.status !== "cancelled");
+    const avg = valid.length ? valid.reduce((s: number, o: any) => s + (o.total || 0), 0) / valid.length : 0;
+
+    let parsed: any = {};
+    try {
+      const r = await openai.chat.completions.create({
+        model: "gpt-4.1-mini", max_tokens: 200, temperature: 0.7,
+        messages: [{
+          role: "user",
+          content: `Ticket médio R$${avg.toFixed(2)} num delivery. Sugira UM cupom estratégico que aumente pedidos ` +
+            `sem queimar margem. Responda SOMENTE JSON: {"code":"CODIGO","type":"percent|fixed|free_delivery",` +
+            `"value":10,"min_order":0,"reason":"motivo curto"}.`,
+        }],
+      });
+      parsed = JSON.parse(r.choices[0]?.message?.content?.replace(/```json|```/g, "").trim() || "{}");
+    } catch { /* usa defaults abaixo */ }
+
+    const suggestion = {
+      code: String(parsed.code || "VOLTA10").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20) || "VOLTA10",
+      type: ["percent", "fixed", "free_delivery"].includes(parsed.type) ? parsed.type : "percent",
+      value: Number(parsed.value) || 10,
+      min_order: Number(parsed.min_order) || 0,
+      reason: parsed.reason || "",
+    };
+    return { suggestion };
+  });
+
   const port = parseInt(process.env.ADS_PORT || "3006");
   await app.listen({ port, host: "0.0.0.0" });
   console.log("Ads engine on :" + port);
