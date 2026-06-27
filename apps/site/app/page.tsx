@@ -7,6 +7,7 @@ import { SiteShell } from "@/components/site-shell";
 import { CtaSection } from "@/components/cta-section";
 import { SectionHeading, DiffCard, Badge } from "@/components/ui";
 import { Reveal } from "@/components/reveal";
+import { PartnerLogo } from "@/components/partner-logo";
 
 export const dynamic = "force-static";
 
@@ -50,18 +51,19 @@ const CATEGORIES = [
   },
 ];
 
+// logo: arquivo em apps/site/public/partners/. Se não existir, mostra o badge com a sigla.
 const INTEGRATIONS = [
-  { name: "iFood", color: "#EA1D2C", abbr: "iF" },
-  { name: "99 Food", color: "#FFB800", abbr: "99" },
-  { name: "WhatsApp", color: "#25D366", abbr: "WA" },
-  { name: "Meta Pixel", color: "#1877F2", abbr: "Meta" },
-  { name: "Google Analytics", color: "#E37400", abbr: "GA" },
-  { name: "Tag Manager", color: "#246FDB", abbr: "GTM" },
-  { name: "Google Ads", color: "#4285F4", abbr: "G" },
-  { name: "Meu Negócio", color: "#34A853", abbr: "GMB" },
-  { name: "Foody", color: "#77BB22", abbr: "FD" },
-  { name: "Pick N Go", color: "#5C3D91", abbr: "PnG" },
-  { name: "Saipos", color: "#FF5722", abbr: "SP" },
+  { name: "iFood", color: "#EA1D2C", abbr: "iF", logo: "/partners/ifood.svg" },
+  { name: "99 Food", color: "#FFB800", abbr: "99", logo: "/partners/99food.svg" },
+  { name: "WhatsApp", color: "#25D366", abbr: "WA", logo: "/partners/whatsapp.svg" },
+  { name: "Meta Pixel", color: "#1877F2", abbr: "Meta", logo: "/partners/meta.svg" },
+  { name: "Google Analytics", color: "#E37400", abbr: "GA", logo: "/partners/google-analytics.svg" },
+  { name: "Tag Manager", color: "#246FDB", abbr: "GTM", logo: "/partners/gtm.svg" },
+  { name: "Google Ads", color: "#4285F4", abbr: "G", logo: "/partners/google-ads.svg" },
+  { name: "Meu Negócio", color: "#34A853", abbr: "GMB", logo: "/partners/gmb.svg" },
+  { name: "Foody", color: "#77BB22", abbr: "FD", logo: "/partners/foody.svg" },
+  { name: "Pick N Go", color: "#5C3D91", abbr: "PnG", logo: "/partners/pick-n-go.svg" },
+  { name: "Saipos", color: "#FF5722", abbr: "SP", logo: "/partners/saipos.svg" },
 ];
 
 const FAQ = [
@@ -214,9 +216,7 @@ export default function HomePage() {
           <div className="flex w-max animate-marquee gap-3">
             {[...INTEGRATIONS, ...INTEGRATIONS].map((i, idx) => (
               <div key={`${i.name}-${idx}`} className="flex shrink-0 items-center gap-2.5 rounded-pill border border-black/5 bg-white py-2 pl-2 pr-4">
-                <span className="grid h-8 w-8 place-items-center rounded-full font-mono text-[10px] font-bold text-white" style={{ backgroundColor: i.color }}>
-                  {i.abbr}
-                </span>
+                <PartnerLogo name={i.name} logo={i.logo} color={i.color} abbr={i.abbr} />
                 <span className="text-sm font-medium text-cafe">{i.name}</span>
               </div>
             ))}
