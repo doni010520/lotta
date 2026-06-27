@@ -10,11 +10,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://uselotta.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Lotta — Seu delivery lota quando o cliente é seu",
+  title: "Lotta — a solução que lota o seu delivery",
   description:
     "Plataforma SaaS de delivery para restaurantes: cardápio digital, atendimento com IA no WhatsApp, CRM, fidelidade e tráfego pago — sem taxa por pedido.",
   openGraph: {
-    title: "Lotta — Seu delivery lota quando o cliente é seu",
+    title: "Lotta — a solução que lota o seu delivery",
     description: "Do pedido à fidelização, o Lotta cuida de tudo. Seu cliente compra mais, volta sempre e é seu — não do app.",
     url: SITE_URL,
     siteName: "Lotta",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lotta — Seu delivery lota quando o cliente é seu",
+    title: "Lotta — a solução que lota o seu delivery",
     description: "Do pedido à fidelização, o Lotta cuida de tudo. Seu cliente compra mais, volta sempre e é seu — não do app.",
   },
 };

@@ -8,6 +8,7 @@ import { CtaSection } from "@/components/cta-section";
 import { SectionHeading, DiffCard, Badge } from "@/components/ui";
 import { Reveal } from "@/components/reveal";
 import { PartnerLogo } from "@/components/partner-logo";
+import { CountUp } from "@/components/count-up";
 
 export const dynamic = "force-static";
 
@@ -19,10 +20,10 @@ const KPIS = [
 ];
 
 const NUMEROS = [
-  { v: "+500", l: "Restaurantes ativos", c: "text-paprica" },
-  { v: "+50k", l: "Pedidos finalizados", c: "text-paprica" },
-  { v: "+120k", l: "Conversas com IA", c: "text-gema" },
-  { v: "0%", l: "Taxa por pedido", c: "text-paprica" },
+  { prefix: "+", value: 500, suffix: "", l: "Restaurantes ativos", c: "text-paprica" },
+  { prefix: "+", value: 50, suffix: "k", l: "Pedidos finalizados", c: "text-paprica" },
+  { prefix: "+", value: 120, suffix: "k", l: "Conversas com IA", c: "text-gema" },
+  { prefix: "", value: 0, suffix: "%", l: "Taxa por pedido", c: "text-paprica" },
 ];
 
 const CATEGORIES = [
@@ -134,7 +135,9 @@ export default function HomePage() {
           <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {NUMEROS.map((n) => (
               <div key={n.l} className="text-center">
-                <div className={`font-display text-4xl font-bold md:text-5xl ${n.c}`}>{n.v}</div>
+                <div className={`font-display text-4xl font-bold md:text-5xl ${n.c}`}>
+                  <CountUp prefix={n.prefix} value={n.value} suffix={n.suffix} />
+                </div>
                 <div className="mt-1 text-sm text-white/60">{n.l}</div>
               </div>
             ))}

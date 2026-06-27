@@ -24,7 +24,7 @@ export default function OpengraphImage() {
           <span style={{ color: "#FFC53D" }}>.</span>
         </div>
         <div style={{ display: "flex", fontSize: 78, fontWeight: 800, color: "#ffffff", lineHeight: 1.05, marginTop: 28, maxWidth: 940 }}>
-          Seu delivery lota quando o cliente é seu.
+          A solução que lota o seu delivery.
         </div>
         <div style={{ display: "flex", fontSize: 30, color: "#FFB7A8", marginTop: 28, maxWidth: 860 }}>
           Cardápio digital, IA no WhatsApp, fidelidade e tráfego — sem taxa por pedido.
