@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { toast } from "sonner";
 import { Plus, Send, Clock } from "lucide-react";
+import { Modal } from "@/components/ui/modal";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-600", scheduled: "bg-blue-50 text-blue-600",
@@ -84,7 +85,7 @@ export default function CampanhasPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Campanhas</h1>
+        <h1 className="font-display text-2xl font-bold text-cafe">Campanhas</h1>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 px-4 py-2 bg-paprica text-white rounded-lg text-sm"><Plus className="w-4 h-4" /> Nova campanha</button>
       </div>
 
@@ -96,7 +97,7 @@ export default function CampanhasPage() {
                 <p className="font-medium">{c.name}</p>
                 <span className={`px-2 py-0.5 text-xs rounded-full ${STATUS_COLORS[c.status]}`}>{STATUS_LABEL[c.status] || c.status}</span>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-muted mt-0.5">
                 {c.sent_count > 0 && `${c.sent_count} enviados · ${c.delivered_count} entregues · ${c.read_count} lidos · ${c.converted_count} convertidos`}
                 {c.sent_count === 0 && c.status === "scheduled" && c.scheduled_at && `Agendada para ${new Date(c.scheduled_at).toLocaleString("pt-BR")}`}
                 {c.sent_count === 0 && c.status !== "scheduled" && `Segmento: ${c.segment_filter?.segment || "todos"}`}
@@ -120,7 +121,7 @@ export default function CampanhasPage() {
           <Clock className="w-5 h-5 text-paprica" />
           <h2 className="font-semibold">Régua de recuperação (automática)</h2>
         </div>
-        <p className="text-sm text-gray-500 mb-4">Mensagens enviadas pela Lotta sem intervenção manual.</p>
+        <p className="text-sm text-muted mb-4">Mensagens enviadas pela Lotta sem intervenção manual.</p>
 
         {/* Carrinho abandonado */}
         <div className="border rounded-lg p-4 mb-3">
@@ -150,13 +151,13 @@ export default function CampanhasPage() {
           <p className="text-xs text-gray-400 mt-1 mb-3">Variáveis: {"{nome}"}, {"{restaurante}"}</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Intervalo mínimo entre envios (dias)</label>
+              <label className="block text-xs text-muted mb-1">Intervalo mínimo entre envios (dias)</label>
               <input type="number" min={1} value={rules.inactive.cooldown_days}
                 onChange={(e) => setRules({ ...rules, inactive: { ...rules.inactive, cooldown_days: parseInt(e.target.value) || 7 } })}
                 className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Cupom de retorno (opcional)</label>
+              <label className="block text-xs text-muted mb-1">Cupom de retorno (opcional)</label>
               <input value={rules.inactive.coupon_code || ""} placeholder="Ex: VOLTA10"
                 onChange={(e) => setRules({ ...rules, inactive: { ...rules.inactive, coupon_code: e.target.value.toUpperCase() } })}
                 className="w-full border rounded-lg px-3 py-2 text-sm uppercase" />
@@ -168,8 +169,8 @@ export default function CampanhasPage() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <form onSubmit={createCampaign} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+        <Modal title="Nova campanha" onClose={() => setShowForm(false)}>
+          <form onSubmit={createCampaign} className="space-y-4">
             <h2 className="text-lg font-semibold">Nova campanha</h2>
             <input name="name" placeholder="Nome da campanha" required className="w-full border rounded-lg px-3 py-2 text-sm" />
             <select name="segment" className="w-full border rounded-lg px-3 py-2 text-sm">
@@ -191,7 +192,7 @@ export default function CampanhasPage() {
               <button type="submit" className="px-4 py-2 bg-paprica text-white rounded-lg text-sm">Criar</button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </div>
   );

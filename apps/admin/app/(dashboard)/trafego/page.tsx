@@ -118,8 +118,8 @@ export default function TrafegoPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-1">Tráfego Pago</h1>
-      <p className="text-sm text-gray-500 mb-6">A IA cria e otimiza seus anúncios toda semana.</p>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-1">Tráfego Pago</h1>
+      <p className="text-sm text-muted mb-6">A IA cria e otimiza seus anúncios toda semana.</p>
 
       {/* Dashboard de métricas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-w-5xl">
@@ -164,7 +164,7 @@ export default function TrafegoPage() {
                         <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[c.status]}`}>{STATUS_LABEL[c.status]}</span>
                         <span className="text-xs text-gray-400">{CHANNEL_LABEL[c.channel]}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted mt-1">
                         Orçamento {formatCurrency(c.daily_budget)}/dia
                         {c.last_optimized_at && ` · otimizada ${new Date(c.last_optimized_at).toLocaleDateString("pt-BR")}`}
                       </p>
@@ -195,7 +195,7 @@ export default function TrafegoPage() {
                   {Array.isArray(c.creatives) && c.creatives.length > 0 && (
                     <div className="mt-3 grid sm:grid-cols-3 gap-2">
                       {c.creatives.map((cr: any, i: number) => (
-                        <div key={i} className={`text-xs p-2 rounded-lg border ${cr.active ? "border-paprica bg-paprica/5" : "border-gray-200 text-gray-500"}`}>
+                        <div key={i} className={`text-xs p-2 rounded-lg border ${cr.active ? "border-paprica bg-paprica/5" : "border-gray-200 text-muted"}`}>
                           {cr.text}
                         </div>
                       ))}
@@ -204,7 +204,7 @@ export default function TrafegoPage() {
 
                   {/* Métricas da campanha */}
                   {(m.impressions || m.clicks || m.spend) ? (
-                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
+                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
                       <span>{Number(m.impressions || 0).toLocaleString("pt-BR")} impressões</span>
                       <span>{Number(m.clicks || 0).toLocaleString("pt-BR")} cliques</span>
                       <span>CTR {Number(m.ctr || 0).toFixed(2)}%</span>
@@ -225,7 +225,7 @@ export default function TrafegoPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
         {/* Configurações de campanha */}
         <div className="bg-white rounded-xl border p-6">
-          <h2 className="font-semibold mb-4 flex items-center gap-2"><Settings className="w-5 h-5 text-gray-500" /> Configurações de campanha</h2>
+          <h2 className="font-semibold mb-4 flex items-center gap-2"><Settings className="w-5 h-5 text-muted" /> Configurações de campanha</h2>
           <div className="space-y-4">
             <label className="flex items-center justify-between gap-3 cursor-pointer">
               <span className="text-sm font-medium text-gray-700">Tráfego automático ativado</span>

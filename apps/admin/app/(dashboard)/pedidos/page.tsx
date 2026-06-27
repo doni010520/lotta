@@ -90,8 +90,8 @@ export default function PedidosKanban() {
       <audio ref={audioRef} src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" preload="auto" />
 
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Pedidos de hoje</h1>
-        <span className="text-sm text-gray-500">{orders.length} pedidos</span>
+        <h1 className="font-display text-2xl font-bold text-cafe">Pedidos de hoje</h1>
+        <span className="text-sm text-muted">{orders.length} pedidos</span>
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-4">
@@ -118,7 +118,7 @@ export default function PedidosKanban() {
                     )}
 
                     {(order as any).items?.slice(0, 3).map((item: any, i: number) => (
-                      <p key={i} className="text-xs text-gray-500">{item.quantity}x {item.product_name}</p>
+                      <p key={i} className="text-xs text-muted">{item.quantity}x {item.product_name}</p>
                     ))}
 
                     <div className="flex items-center justify-between mt-2 pt-2 border-t">

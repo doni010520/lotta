@@ -38,8 +38,8 @@ export default function MarketingPage() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-semibold mb-6">Tags de marketing</h1>
-      <p className="text-sm text-gray-500 mb-6">Os scripts são injetados automaticamente no cardápio digital do seu restaurante.</p>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-6">Tags de marketing</h1>
+      <p className="text-sm text-muted mb-6">Os scripts são injetados automaticamente no cardápio digital do seu restaurante.</p>
 
       <div className="bg-white rounded-xl border p-6 space-y-4">
         <div>

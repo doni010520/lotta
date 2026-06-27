@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { Plus, Pencil, Trash2, GripVertical, Image as ImageIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
 import type { Category, Product } from "@lotta/shared";
 
@@ -111,7 +112,7 @@ export default function CardapioPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Cardápio</h1>
+        <h1 className="font-display text-2xl font-bold text-cafe">Cardápio</h1>
         <div className="flex gap-2">
           <button
             onClick={() => { setEditingCat(null); setShowCatForm(true); }}
@@ -172,7 +173,7 @@ export default function CardapioPage() {
             </div>
 
             {prod.description && (
-              <p className="text-xs text-gray-500 mb-3 line-clamp-2">{prod.description}</p>
+              <p className="text-xs text-muted mb-3 line-clamp-2">{prod.description}</p>
             )}
 
             <div className="flex items-center justify-between">
@@ -190,7 +191,7 @@ export default function CardapioPage() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => toggleProduct(prod.id, prod.is_active)}
-                  className={`px-2 py-1 text-xs rounded ${prod.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}
+                  className={`px-2 py-1 text-xs rounded ${prod.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-muted"}`}
                 >
                   {prod.is_active ? "Ativo" : "Inativo"}
                 </button>
@@ -220,8 +221,8 @@ export default function CardapioPage() {
 
       {/* Category modal */}
       {showCatForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <form onSubmit={saveCategory} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+        <Modal title={editingCat ? "Editar categoria" : "Nova categoria"} onClose={() => { setShowCatForm(false); setEditingCat(null); }}>
+          <form onSubmit={saveCategory} className="space-y-4">
             <h2 className="text-lg font-semibold">{editingCat ? "Editar categoria" : "Nova categoria"}</h2>
             <input name="name" defaultValue={editingCat?.name} placeholder="Nome da categoria" required className="w-full border rounded-lg px-3 py-2 text-sm" />
             <input name="description" defaultValue={editingCat?.description ?? ""} placeholder="Descrição (opcional)" className="w-full border rounded-lg px-3 py-2 text-sm" />
@@ -233,13 +234,13 @@ export default function CardapioPage() {
               <button type="submit" className="px-4 py-2 text-sm bg-paprica text-white rounded-lg">Salvar</button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
 
       {/* Product modal */}
       {showProdForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <form onSubmit={saveProduct} className="bg-white rounded-xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto">
+        <Modal title={editingProd ? "Editar produto" : "Novo produto"} className="max-w-lg" onClose={() => { setShowProdForm(false); setEditingProd(null); }}>
+          <form onSubmit={saveProduct} className="space-y-4">
             <h2 className="text-lg font-semibold">{editingProd ? "Editar produto" : "Novo produto"}</h2>
             <input name="name" defaultValue={editingProd?.name} placeholder="Nome do produto" required className="w-full border rounded-lg px-3 py-2 text-sm" />
             <textarea name="description" defaultValue={editingProd?.description ?? ""} placeholder="Descrição" rows={3} className="w-full border rounded-lg px-3 py-2 text-sm" />
@@ -249,11 +250,11 @@ export default function CardapioPage() {
             </select>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Preço</label>
+                <label className="block text-xs text-muted mb-1">Preço</label>
                 <input name="price" type="number" step="0.01" min="0" defaultValue={editingProd?.price} required className="w-full border rounded-lg px-3 py-2 text-sm" />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Preço promocional</label>
+                <label className="block text-xs text-muted mb-1">Preço promocional</label>
                 <input name="promo_price" type="number" step="0.01" min="0" defaultValue={editingProd?.promo_price ?? ""} className="w-full border rounded-lg px-3 py-2 text-sm" />
               </div>
             </div>
@@ -262,7 +263,7 @@ export default function CardapioPage() {
               <button type="submit" className="px-4 py-2 text-sm bg-paprica text-white rounded-lg">Salvar</button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </div>
   );

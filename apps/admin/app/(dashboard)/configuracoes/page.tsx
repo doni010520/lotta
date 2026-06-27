@@ -97,14 +97,14 @@ export default function ConfiguracoesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Configurações</h1>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-6">Configurações</h1>
 
       <div className="flex gap-1 mb-6 border-b">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === t.key ? "border-paprica text-paprica" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px ${tab === t.key ? "border-paprica text-paprica" : "border-transparent text-muted hover:text-gray-700"}`}
           >
             {t.label}
           </button>
@@ -153,7 +153,7 @@ export default function ConfiguracoesPage() {
             <div key={z.id} className="bg-white rounded-xl border p-4 flex items-center justify-between">
               <div>
                 <p className="font-medium text-sm">{z.name}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   {z.radius_km}km · R$ {z.fee.toFixed(2)} · ~{z.estimated_min}min
                 </p>
               </div>
@@ -164,19 +164,19 @@ export default function ConfiguracoesPage() {
           ))}
           <form onSubmit={addZone} className="bg-white rounded-xl border p-4 grid grid-cols-4 gap-3 items-end">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Nome</label>
+              <label className="block text-xs text-muted mb-1">Nome</label>
               <input name="name" placeholder="Até 3km" required className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Raio (km)</label>
+              <label className="block text-xs text-muted mb-1">Raio (km)</label>
               <input name="radius_km" type="number" step="0.1" required className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Taxa (R$)</label>
+              <label className="block text-xs text-muted mb-1">Taxa (R$)</label>
               <input name="fee" type="number" step="0.01" required className="w-full border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Tempo (min)</label>
+              <label className="block text-xs text-muted mb-1">Tempo (min)</label>
               <div className="flex gap-2">
                 <input name="estimated_min" type="number" defaultValue={30} className="w-full border rounded-lg px-3 py-2 text-sm" />
                 <button type="submit" className="px-4 py-2 bg-paprica text-white rounded-lg text-sm whitespace-nowrap">+</button>
@@ -210,17 +210,17 @@ export default function ConfiguracoesPage() {
           })}
           <form onSubmit={addHour} className="bg-white rounded-xl border p-4 flex gap-3 items-end">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Dia</label>
+              <label className="block text-xs text-muted mb-1">Dia</label>
               <select name="day_of_week" className="border rounded-lg px-3 py-2 text-sm">
                 {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Abre</label>
+              <label className="block text-xs text-muted mb-1">Abre</label>
               <input name="open_time" type="time" required className="border rounded-lg px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Fecha</label>
+              <label className="block text-xs text-muted mb-1">Fecha</label>
               <input name="close_time" type="time" required className="border rounded-lg px-3 py-2 text-sm" />
             </div>
             <button type="submit" className="px-4 py-2 bg-paprica text-white rounded-lg text-sm">Adicionar</button>

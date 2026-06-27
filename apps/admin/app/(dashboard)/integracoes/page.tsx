@@ -36,7 +36,7 @@ export default function IntegracoesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Integrações</h1>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-6">Integrações</h1>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
         {/* iFood */}
         <div className="bg-white rounded-xl border p-6">

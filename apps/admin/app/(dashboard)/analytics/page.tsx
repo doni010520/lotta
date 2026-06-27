@@ -144,7 +144,7 @@ export default function AnalyticsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Analytics</h1>
+        <h1 className="font-display text-2xl font-bold text-cafe">Analytics</h1>
         <div className="flex items-center gap-2">
           <button onClick={exportCSV} className="inline-flex items-center gap-2 border rounded-lg px-3 py-2 text-sm hover:bg-gray-50">
             <Download className="w-4 h-4" /> Exportar CSV
@@ -170,7 +170,7 @@ export default function AnalyticsPage() {
           <div key={kpi.label} className="bg-white rounded-xl border p-4">
             <div className="flex items-center gap-2 mb-1">
               <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
-              <span className="text-xs text-gray-500">{kpi.label}</span>
+              <span className="text-xs text-muted">{kpi.label}</span>
             </div>
             <p className="text-xl font-bold">{kpi.value}</p>
           </div>
@@ -237,7 +237,7 @@ export default function AnalyticsPage() {
                 {(insight.recommendations || []).map((r: any, i: number) => (
                   <li key={i} className="text-sm">
                     <span className="font-medium text-gray-800">{r.title}</span>
-                    {r.action && <span className="text-gray-500"> — {r.action}</span>}
+                    {r.action && <span className="text-muted"> — {r.action}</span>}
                   </li>
                 ))}
               </ul>
@@ -288,7 +288,7 @@ export default function AnalyticsPage() {
           <h2 className="font-semibold mb-4">Ranking de produtos</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="text-xs text-gray-500"><tr><th className="text-left py-2">Produto</th><th className="text-right py-2">Qtd</th><th className="text-right py-2">Faturamento</th><th className="text-right py-2">% do total</th><th className="text-left py-2 pl-4">Quadrante</th></tr></thead>
+              <thead className="text-xs text-muted"><tr><th className="text-left py-2">Produto</th><th className="text-right py-2">Qtd</th><th className="text-right py-2">Faturamento</th><th className="text-right py-2">% do total</th><th className="text-left py-2 pl-4">Quadrante</th></tr></thead>
               <tbody>
                 {topProducts.map((p, i) => (
                   <tr key={i} className="border-t">

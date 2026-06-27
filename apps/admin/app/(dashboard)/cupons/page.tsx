@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Plus, Ticket, Trash2, Sparkles } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { Modal } from "@/components/ui/modal";
 
 export default function CuponsPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -82,7 +83,7 @@ export default function CuponsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Cupons</h1>
+        <h1 className="font-display text-2xl font-bold text-cafe">Cupons</h1>
         <div className="flex items-center gap-2">
           <button onClick={suggestWithAI} disabled={suggesting} className="flex items-center gap-2 px-4 py-2 border rounded-lg text-sm hover:bg-gray-50 disabled:opacity-50">
             <Sparkles className="w-4 h-4 text-paprica" /> {suggesting ? "Sugerindo..." : "Sugerir com IA"}
@@ -100,7 +101,7 @@ export default function CuponsPage() {
               <Ticket className="w-5 h-5 text-purple-500" />
               <div>
                 <p className="font-mono font-bold text-sm">{c.code}</p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   {c.type === "percent" && `${c.value}% de desconto`}
                   {c.type === "fixed" && `${formatCurrency(c.value)} de desconto`}
                   {c.type === "free_delivery" && "Frete grátis"}
@@ -111,7 +112,7 @@ export default function CuponsPage() {
               </div>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => toggleCoupon(c.id, c.is_active)} className={`px-2 py-1 text-xs rounded ${c.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              <button onClick={() => toggleCoupon(c.id, c.is_active)} className={`px-2 py-1 text-xs rounded ${c.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-muted"}`}>
                 {c.is_active ? "Ativo" : "Inativo"}
               </button>
               <button onClick={() => deleteCoupon(c.id)} className="p-1 text-paprica/60 hover:text-paprica"><Trash2 className="w-4 h-4" /></button>
@@ -122,8 +123,8 @@ export default function CuponsPage() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <form key={suggestion?.code || "manual"} onSubmit={createCoupon} className="bg-white rounded-xl p-6 w-full max-w-md space-y-4">
+        <Modal title={bulkMode ? "Criar cupons em lote" : "Novo cupom"} onClose={() => setShowForm(false)}>
+          <form key={suggestion?.code || "manual"} onSubmit={createCoupon} className="space-y-4">
             <h2 className="text-lg font-semibold">{bulkMode ? "Criar cupons em lote" : suggestion ? "Cupom sugerido pela IA" : "Novo cupom"}</h2>
             {suggestion?.reason && <p className="text-xs text-gray-600 bg-gema/10 border border-gema/30 rounded-lg p-2">{suggestion.reason}</p>}
 
@@ -158,7 +159,7 @@ export default function CuponsPage() {
               <button type="submit" className="px-4 py-2 bg-paprica text-white rounded-lg text-sm">Criar</button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </div>
   );

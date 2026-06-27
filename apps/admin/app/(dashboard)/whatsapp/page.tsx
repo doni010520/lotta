@@ -54,7 +54,7 @@ export default function WhatsAppPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">WhatsApp</h1>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-6">WhatsApp</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Connection status */}
@@ -68,7 +68,7 @@ export default function WhatsAppPage() {
             <div>
               <p className="font-medium">{isConnected ? "Conectado" : "Desconectado"}</p>
               {instance?.phone_number && (
-                <p className="text-sm text-gray-500">{instance.phone_number}</p>
+                <p className="text-sm text-muted">{instance.phone_number}</p>
               )}
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function WhatsAppPage() {
           {provider === "uazapi" && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Host da instância</label>
+                <label className="block text-xs text-muted mb-1">Host da instância</label>
                 <input
                   value={creds.host || ""}
                   onChange={(e) => setCreds({ ...creds, host: e.target.value })}
@@ -97,7 +97,7 @@ export default function WhatsAppPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Token admin</label>
+                <label className="block text-xs text-muted mb-1">Token admin</label>
                 <input
                   type="password"
                   value={creds.token || ""}
@@ -106,7 +106,7 @@ export default function WhatsAppPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Nome da instância</label>
+                <label className="block text-xs text-muted mb-1">Nome da instância</label>
                 <input
                   value={creds.instance || ""}
                   onChange={(e) => setCreds({ ...creds, instance: e.target.value })}
@@ -116,7 +116,7 @@ export default function WhatsAppPage() {
 
               {qrCode && (
                 <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-500 mb-2">Escaneie o QR Code no WhatsApp</p>
+                  <p className="text-sm text-muted mb-2">Escaneie o QR Code no WhatsApp</p>
                   <img src={qrCode} alt="QR Code" className="mx-auto w-48 h-48 border rounded-lg" />
                 </div>
               )}
@@ -126,7 +126,7 @@ export default function WhatsAppPage() {
           {provider === "meta_cloud" && (
             <div className="space-y-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Phone Number ID</label>
+                <label className="block text-xs text-muted mb-1">Phone Number ID</label>
                 <input
                   value={creds.phone_number_id || ""}
                   onChange={(e) => setCreds({ ...creds, phone_number_id: e.target.value })}
@@ -134,7 +134,7 @@ export default function WhatsAppPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">Access Token</label>
+                <label className="block text-xs text-muted mb-1">Access Token</label>
                 <input
                   type="password"
                   value={creds.access_token || ""}
@@ -143,7 +143,7 @@ export default function WhatsAppPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 mb-1">WABA ID</label>
+                <label className="block text-xs text-muted mb-1">WABA ID</label>
                 <input
                   value={creds.waba_id || ""}
                   onChange={(e) => setCreds({ ...creds, waba_id: e.target.value })}
@@ -212,7 +212,7 @@ export default function WhatsAppPage() {
       {/* Webhook URLs */}
       <div className="mt-6 bg-gray-50 rounded-xl border p-4">
         <p className="text-sm font-medium text-gray-700 mb-2">URLs de webhook (configure no provedor)</p>
-        <div className="space-y-1 text-xs text-gray-500 font-mono">
+        <div className="space-y-1 text-xs text-muted font-mono">
           <p>Uazapi: POST {process.env.NEXT_PUBLIC_WHATSAPP_URL || "https://wa.seudominio.com"}/webhooks/uazapi</p>
           <p>Meta: GET/POST {process.env.NEXT_PUBLIC_WHATSAPP_URL || "https://wa.seudominio.com"}/webhooks/meta</p>
         </div>

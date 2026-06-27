@@ -39,16 +39,16 @@ export default function ClientesPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Clientes</h1>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-6">Clientes</h1>
 
       {/* Stats cards */}
       <div className="grid grid-cols-3 lg:grid-cols-7 gap-2 mb-6">
         <button onClick={() => setSegmentFilter("")} className={`p-3 rounded-xl border text-center ${!segmentFilter ? "ring-2 ring-paprica" : ""}`}>
-          <p className="text-xl font-bold">{total}</p><p className="text-[10px] text-gray-500">Total</p>
+          <p className="text-xl font-bold">{total}</p><p className="text-[10px] text-muted">Total</p>
         </button>
         {segments.map((seg) => (
           <button key={seg} onClick={() => setSegmentFilter(seg === segmentFilter ? "" : seg)} className={`p-3 rounded-xl border text-center ${segmentFilter === seg ? "ring-2 ring-paprica" : ""}`}>
-            <p className="text-xl font-bold">{stats[seg] || 0}</p><p className="text-[10px] text-gray-500 capitalize">{seg}s</p>
+            <p className="text-xl font-bold">{stats[seg] || 0}</p><p className="text-[10px] text-muted capitalize">{seg}s</p>
           </button>
         ))}
       </div>
@@ -62,7 +62,7 @@ export default function ClientesPage() {
       {/* Table */}
       <div className="bg-white rounded-xl border overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-gray-500 text-xs">
+          <thead className="bg-gray-50 text-muted text-xs">
             <tr>
               <th className="text-left px-4 py-3">Cliente</th>
               <th className="text-left px-4 py-3">Segmento</th>
@@ -82,8 +82,8 @@ export default function ClientesPage() {
                 <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${SEGMENT_COLORS[c.segment] || ""}`}>{c.segment}</span></td>
                 <td className="px-4 py-3 text-right">{c.total_orders}</td>
                 <td className="px-4 py-3 text-right font-medium">{formatCurrency(c.total_spent)}</td>
-                <td className="px-4 py-3 capitalize text-gray-500">{c.source}</td>
-                <td className="px-4 py-3 text-gray-500">{c.last_order_at ? new Date(c.last_order_at).toLocaleDateString("pt-BR") : "—"}</td>
+                <td className="px-4 py-3 capitalize text-muted">{c.source}</td>
+                <td className="px-4 py-3 text-muted">{c.last_order_at ? new Date(c.last_order_at).toLocaleDateString("pt-BR") : "—"}</td>
               </tr>
             ))}
           </tbody>

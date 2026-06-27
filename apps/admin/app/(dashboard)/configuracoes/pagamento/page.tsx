@@ -56,8 +56,8 @@ export default function PagamentoPage() {
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-2xl font-semibold mb-6">Pagamento</h1>
-      <p className="text-sm text-gray-500 mb-6">O dinheiro dos pedidos cai direto na sua conta. A Lotta não toca no seu dinheiro.</p>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-6">Pagamento</h1>
+      <p className="text-sm text-muted mb-6">O dinheiro dos pedidos cai direto na sua conta. A Lotta não toca no seu dinheiro.</p>
 
       <div className="bg-white rounded-xl border p-6 space-y-5">
         <div>
@@ -69,10 +69,10 @@ export default function PagamentoPage() {
 
         {selectedGw && selectedGw.fields.length > 0 && (
           <div className="space-y-3">
-            <p className="text-xs text-gray-500">Credenciais do {selectedGw.label} (criptografadas)</p>
+            <p className="text-xs text-muted">Credenciais do {selectedGw.label} (criptografadas)</p>
             {selectedGw.fields.map((field) => (
               <div key={field}>
-                <label className="block text-xs text-gray-500 mb-1">{field}</label>
+                <label className="block text-xs text-muted mb-1">{field}</label>
                 <input
                   type={field.includes("key") || field.includes("token") || field.includes("secret") ? "password" : "text"}
                   value={creds[field] || ""}

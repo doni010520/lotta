@@ -11,7 +11,11 @@ const config: Config = {
         body: "#33333C",
         muted: "#8A6A5E",
         neutral: "#9A9AA4",
+        border: "#EFE1D7",
       },
+      // Borda padrão quente: deixa todos os `border` do painel na cor da marca
+      borderColor: { DEFAULT: "#EFE1D7" },
+      ringColor: { DEFAULT: "#E5402A" },
       fontFamily: {
         display: ["Space Grotesk", "system-ui", "sans-serif"],
         sans: ["Manrope", "system-ui", "sans-serif"],

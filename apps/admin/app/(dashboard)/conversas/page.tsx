@@ -57,7 +57,7 @@ export default function ConversasPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-semibold mb-6">Conversas</h1>
+      <h1 className="font-display text-2xl font-bold text-cafe mb-6">Conversas</h1>
 
       <div className="flex gap-4 h-[calc(100vh-200px)]">
         {/* Conversation list */}
