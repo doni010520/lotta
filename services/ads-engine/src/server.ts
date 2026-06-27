@@ -1,10 +1,53 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import OpenAI from "openai";
 import { metaAds } from "./meta/client";
 import { googleAds, gmb } from "./google/client";
 
 const app = Fastify({ logger: true });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Analisa feedbacks recentes e grava resumo + ações recomendadas (Relatórios IA)
+async function analyzeFeedbacks(db: SupabaseClient, restaurantId: string, periodDays = 30) {
+  const since = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000).toISOString();
+  const { data: feedbacks } = await db
+    .from("feedbacks")
+    .select("rating, comment")
+    .eq("restaurant_id", restaurantId)
+    .gte("created_at", since)
+    .limit(200);
+  if (!feedbacks?.length) return null;
+
+  const avg = feedbacks.reduce((s, f) => s + (f.rating || 0), 0) / feedbacks.length;
+  const comments = feedbacks.filter((f) => f.comment).map((f) => `(${f.rating}★) ${f.comment}`).slice(0, 80).join("\n");
+
+  let parsed: any = { summary: "", sentiment: "neutro", recommendations: [] };
+  try {
+    const r = await openai.chat.completions.create({
+      model: "gpt-4.1-mini", max_tokens: 600, temperature: 0.4,
+      messages: [{
+        role: "user",
+        content: `Analise os feedbacks de um restaurante delivery (nota média ${avg.toFixed(1)}). ` +
+          `Responda SOMENTE JSON: {"summary":"resumo de 1-2 frases","sentiment":"positivo|neutro|negativo",` +
+          `"recommendations":[{"title":"problema","action":"ação recomendada"}]} (máx 4 recomendações).\n\nFeedbacks:\n${comments || "(sem comentários, só notas)"}`,
+      }],
+    });
+    parsed = JSON.parse(r.choices[0]?.message?.content?.replace(/```json|```/g, "").trim() || "{}");
+  } catch { /* mantém default */ }
+
+  const insight = {
+    restaurant_id: restaurantId,
+    period_days: periodDays,
+    summary: parsed.summary || null,
+    recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
+    sentiment: ["positivo", "neutro", "negativo"].includes(parsed.sentiment) ? parsed.sentiment : "neutro",
+    avg_rating: Math.round(avg * 100) / 100,
+    sample_size: feedbacks.length,
+  };
+  await db.from("feedback_insights").insert(insight);
+  return insight;
+}
 
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -236,6 +279,30 @@ async function start() {
       }
     }
     return { refreshed };
+  });
+
+  // ── Internal: análise de feedbacks por IA (sob demanda) ──
+  app.post("/api/feedback/insights", { preHandler: requireInternal }, async (request) => {
+    const { restaurant_id, period_days } = request.body as any;
+    const insight = await analyzeFeedbacks(supabase!, restaurant_id, period_days || 30);
+    if (!insight) return { skipped: true, reason: "sem feedbacks no período" };
+    return { insight };
+  });
+
+  // ── Cron: gera insights de feedback para todos os restaurantes com volume mínimo ──
+  app.get("/cron/feedback-insights", { preHandler: requireInternal }, async () => {
+    const { data: restaurants } = await supabase!.from("restaurants").select("id");
+    let generated = 0;
+    for (const rest of restaurants ?? []) {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase!.from("feedbacks")
+        .select("id", { count: "exact", head: true })
+        .eq("restaurant_id", rest.id).gte("created_at", since);
+      if ((count ?? 0) < 3) continue; // volume mínimo para um insight útil
+      try { if (await analyzeFeedbacks(supabase!, rest.id, 30)) generated++; }
+      catch (err) { console.error("[ads] feedback insight error", err); }
+    }
+    return { generated };
   });
 
   const port = parseInt(process.env.ADS_PORT || "3006");

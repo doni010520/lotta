@@ -212,6 +212,8 @@ export async function publicOrderRoutes(app: FastifyInstance) {
       order_id: order!.id, restaurant_id: restaurantId, to_status: status,
       notes: "Pedido criado pelo cardápio digital",
     });
+    // Evento de funil (compra) — registrado no servidor para ser confiável
+    try { await db.from("menu_events").insert({ restaurant_id: restaurantId, type: "purchase", order_id: order!.id }); } catch {}
     if (customer?.id) {
       try { await db.rpc("increment_customer_stats", { p_customer_id: customer.id, p_total: total }); } catch {}
     }
@@ -219,6 +221,22 @@ export async function publicOrderRoutes(app: FastifyInstance) {
     onOrderCreated(db, order!.id, restaurantId).catch((err) => app.log.error({ err }, "onOrderCreated falhou"));
 
     return reply.status(201).send({ id: order!.id, order_number: order!.order_number, total: order!.total });
+  });
+
+  // POST /api/public/events — eventos de funil do cardápio (anônimo, sem auth)
+  app.post("/events", { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } }, async (request, reply) => {
+    const { restaurant_slug, session_id, type, product_id } = (request.body || {}) as any;
+    const allowed = ["view_menu", "view_product", "add_to_cart", "begin_checkout"];
+    if (!restaurant_slug || !allowed.includes(type)) return reply.status(400).send({ error: "Evento inválido" });
+    const db = request.supabaseAdmin;
+    const { data: rest } = await db.from("restaurants").select("id").eq("slug", restaurant_slug).maybeSingle();
+    if (!rest) return reply.status(404).send({ error: "Restaurante não encontrado" });
+    try {
+      await db.from("menu_events").insert({
+        restaurant_id: rest.id, session_id: session_id || null, type, product_id: product_id || null,
+      });
+    } catch { /* evento de telemetria — falha não impacta o cliente */ }
+    return { ok: true };
   });
 
   // POST /api/public/loyalty/balance — saldo de cashback do cliente (por telefone)

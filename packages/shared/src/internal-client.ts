@@ -46,3 +46,9 @@ export const ads = {
   publishCampaign: (restaurant_id: string, campaign_id: string) =>
     internalPost("ads", "/api/ads/publish", { restaurant_id, campaign_id }),
 };
+
+// ── Relatórios IA (roda no ads-engine, que tem OpenAI + Supabase) ──
+export const reports = {
+  feedbackInsights: (restaurant_id: string, period_days = 30) =>
+    internalPost("ads", "/api/feedback/insights", { restaurant_id, period_days }),
+};

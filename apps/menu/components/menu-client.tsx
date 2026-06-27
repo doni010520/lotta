@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { formatCurrency } from "@/lib/utils";
+import { trackEvent } from "@/lib/analytics";
 import { ProductModal } from "./product-modal";
 import { CartDrawer } from "./cart-drawer";
 import { ProductImage } from "./product-image";
@@ -22,6 +23,10 @@ export function MenuClient({ restaurant, categories, products, zones, topProduct
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showCart, setShowCart] = useState(false);
   const { items, itemCount, subtotal } = useCart();
+
+  // Funil de conversão
+  useEffect(() => { trackEvent(restaurant.slug, "view_menu"); }, [restaurant.slug]);
+  useEffect(() => { if (selectedProduct) trackEvent(restaurant.slug, "view_product", selectedProduct.id); }, [selectedProduct, restaurant.slug]);
 
   const topProducts = products.filter((p) => topProductIds.includes(p.id));
 
@@ -173,7 +178,7 @@ export function MenuClient({ restaurant, categories, products, zones, topProduct
         <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-gradient-to-t from-creme via-creme to-transparent z-30">
           <div className="max-w-2xl mx-auto">
             <button
-              onClick={() => setShowCart(true)}
+              onClick={() => { trackEvent(restaurant.slug, "begin_checkout"); setShowCart(true); }}
               className="w-full bg-paprica text-white rounded-xl py-3.5 px-4 flex items-center justify-between font-medium shadow-lg hover:bg-paprica-dark transition-colors"
             >
               <div className="flex items-center gap-2">
@@ -189,7 +194,7 @@ export function MenuClient({ restaurant, categories, products, zones, topProduct
 
       {/* Product modal */}
       {selectedProduct && (
-        <ProductModal product={selectedProduct} onClose={() => setSelectedProduct(null)} />
+        <ProductModal slug={restaurant.slug} product={selectedProduct} onClose={() => setSelectedProduct(null)} />
       )}
 
       {/* Cart drawer */}

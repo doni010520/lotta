@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createOrder, requestPixPayment, getLoyaltyBalance } from "@/lib/payment-client";
+import { trackEvent } from "@/lib/analytics";
 import { Sheet } from "./sheet";
 import { ProductImage } from "./product-image";
 
@@ -66,6 +67,7 @@ export function CartDrawer({ slug, minOrder, zones, onClose, suggestions = [], o
       notes: "",
       totalPrice: unitPrice,
     });
+    trackEvent(slug, "add_to_cart", prod.id);
     toast.success(`${prod.name} adicionado`);
   }
 

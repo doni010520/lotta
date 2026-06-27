@@ -7,13 +7,15 @@ import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { Sheet } from "./sheet";
 import { ProductImage } from "./product-image";
+import { trackEvent } from "@/lib/analytics";
 
 interface Props {
   product: any;
   onClose: () => void;
+  slug?: string;
 }
 
-export function ProductModal({ product, onClose }: Props) {
+export function ProductModal({ product, onClose, slug }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [notes, setNotes] = useState("");
@@ -84,6 +86,7 @@ export function ProductModal({ product, onClose }: Props) {
       totalPrice: (unitPrice + optionsTotal) * quantity,
     });
 
+    if (slug) trackEvent(slug, "add_to_cart", product.id);
     toast.success("Adicionado ao carrinho");
     onClose();
   }
