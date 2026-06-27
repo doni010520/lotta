@@ -1,3 +1,3 @@
 export * from "./types";
 export * from "./validations";
-export { wa } from "./internal-client";
+export { wa, ads } from "./internal-client";

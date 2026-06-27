@@ -15,6 +15,7 @@ import { dispatchRoutes } from "./routes/dispatch";
 import { orderRoutes } from "./routes/orders";
 import { publicOrderRoutes } from "./routes/public-orders";
 import { uploadRoutes } from "./routes/uploads";
+import { adsRoutes } from "./routes/ads";
 
 const app = Fastify({ logger: true });
 
@@ -42,6 +43,7 @@ const ALLOWED_ORIGINS = [
   await app.register(dispatchRoutes, { prefix: "/api/orders" });
   await app.register(orderRoutes, { prefix: "/api/orders" });
   await app.register(uploadRoutes, { prefix: "/api/uploads" });
+  await app.register(adsRoutes, { prefix: "/api/ads" });
 
   app.get("/api/health", async () => ({ status: "ok", service: "lotta-api", version: "0.0.1" }));
 

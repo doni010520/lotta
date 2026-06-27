@@ -127,6 +127,117 @@ async function start() {
     return { replied };
   });
 
+  // ── Helper: extrai métricas do payload de insights da Meta ──
+  function parseMetaInsights(insights: any) {
+    const row = insights?.data?.[0];
+    if (!row) return null;
+    const purchases = (row.actions ?? []).find((a: any) => String(a.action_type).includes("purchase"));
+    return {
+      impressions: Number(row.impressions ?? 0),
+      clicks: Number(row.clicks ?? 0),
+      ctr: Number(row.ctr ?? 0),
+      spend: Number(row.spend ?? 0),
+      conversions: purchases ? Number(purchases.value ?? 0) : 0,
+    };
+  }
+
+  // ── Internal: sincroniza métricas das campanhas de um restaurante ──
+  app.post("/api/ads/refresh-metrics", { preHandler: requireInternal }, async (request) => {
+    const { restaurant_id } = request.body as any;
+    const { data: rest } = await supabase!.from("restaurants").select("metadata").eq("id", restaurant_id).single();
+    const creds = (rest?.metadata as any)?.meta_ads_creds;
+    const { data: campaigns } = await supabase!.from("ad_campaigns")
+      .select("id, platform_campaign_id")
+      .eq("restaurant_id", restaurant_id).eq("channel", "meta")
+      .not("platform_campaign_id", "is", null);
+
+    let refreshed = 0;
+    for (const c of campaigns ?? []) {
+      if (!creds?.access_token || !c.platform_campaign_id) continue;
+      try {
+        const insights = await metaAds.getMetrics(creds, c.platform_campaign_id);
+        const metrics = parseMetaInsights(insights);
+        if (metrics) {
+          await supabase!.from("ad_campaigns")
+            .update({ metrics, metrics_updated_at: new Date().toISOString() })
+            .eq("id", c.id);
+          refreshed++;
+        }
+      } catch (err) { console.error("[ads] metrics refresh error", err); }
+    }
+    return { refreshed };
+  });
+
+  // ── Cron semanal: a IA gera 3 criativos por restaurante e mantém 1 campanha viva por canal ──
+  app.get("/cron/ads-weekly", { preHandler: requireInternal }, async () => {
+    const { data: restaurants } = await supabase!.from("restaurants").select("id, name, metadata");
+    let generated = 0;
+
+    for (const rest of restaurants ?? []) {
+      const meta = (rest.metadata as any) || {};
+      if (!meta.ads_enabled || !meta.meta_ads_creds?.access_token) continue;
+
+      // produto destaque
+      const { data: product } = await supabase!.from("products").select("id, name, description")
+        .eq("restaurant_id", rest.id).eq("is_active", true).order("sort_order").limit(1).maybeSingle();
+      if (!product) continue;
+
+      let variations: string[] = [];
+      try {
+        variations = await metaAds.generateCreative(rest.name, product.name, product.description || "");
+      } catch (err) { console.error("[ads] creative gen error", err); continue; }
+      if (!variations?.length) continue;
+
+      const creatives = variations.map((text, i) => ({ text, active: i === 0 }));
+      const dailyBudget = Math.round(((meta.ads_weekly_budget ?? 100) / 7) * 100) / 100;
+
+      // mantém 1 campanha viva por canal (índice único garante atomicidade)
+      const { data: existing } = await supabase!.from("ad_campaigns")
+        .select("id").eq("restaurant_id", rest.id).eq("channel", "meta")
+        .in("status", ["draft", "active", "paused"]).maybeSingle();
+
+      if (existing) {
+        await supabase!.from("ad_campaigns").update({
+          creatives, product_id: product.id, daily_budget: dailyBudget,
+          last_optimized_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        }).eq("id", existing.id);
+      } else {
+        await supabase!.from("ad_campaigns").insert({
+          restaurant_id: rest.id, channel: "meta", status: "draft",
+          name: `Campanha ${product.name} — Meta`, daily_budget: dailyBudget,
+          product_id: product.id, creatives, last_optimized_at: new Date().toISOString(),
+        });
+      }
+      generated++;
+    }
+
+    return { generated };
+  });
+
+  // ── Cron: refresh de métricas de todas as campanhas publicadas ──
+  app.get("/cron/ads-metrics", { preHandler: requireInternal }, async () => {
+    const { data: restaurants } = await supabase!.from("restaurants").select("id, metadata");
+    let refreshed = 0;
+    for (const rest of restaurants ?? []) {
+      const creds = (rest.metadata as any)?.meta_ads_creds;
+      if (!creds?.access_token) continue;
+      const { data: campaigns } = await supabase!.from("ad_campaigns")
+        .select("id, platform_campaign_id").eq("restaurant_id", rest.id).eq("channel", "meta")
+        .not("platform_campaign_id", "is", null);
+      for (const c of campaigns ?? []) {
+        try {
+          const metrics = parseMetaInsights(await metaAds.getMetrics(creds, c.platform_campaign_id!));
+          if (metrics) {
+            await supabase!.from("ad_campaigns")
+              .update({ metrics, metrics_updated_at: new Date().toISOString() }).eq("id", c.id);
+            refreshed++;
+          }
+        } catch (err) { console.error("[ads] metrics cron error", err); }
+      }
+    }
+    return { refreshed };
+  });
+
   const port = parseInt(process.env.ADS_PORT || "3006");
   await app.listen({ port, host: "0.0.0.0" });
   console.log("Ads engine on :" + port);
