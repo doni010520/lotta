@@ -64,18 +64,36 @@ export default function OrderTrackingPage({ params }: Props) {
     return () => { supabase.removeChannel(channel); };
   }, [orderId]);
 
-  if (loading) return <div className="p-8 text-center text-gray-400">Carregando...</div>;
-  if (!order) return <div className="p-8 text-center text-gray-400">Pedido não encontrado</div>;
+  if (loading) {
+    return (
+      <div className="px-4 py-6 animate-pulse" aria-busy="true" aria-label="Carregando pedido">
+        <div className="bg-white rounded-2xl border border-cafe/10 p-6 mb-4">
+          <div className="h-3 w-16 bg-creme rounded mx-auto mb-2" />
+          <div className="h-8 w-28 bg-creme rounded mx-auto mb-6" />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-creme" />
+                <div className="h-3 flex-1 bg-creme rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-cafe/10 p-6 h-32" />
+      </div>
+    );
+  }
+  if (!order) return <div className="p-8 text-center text-muted">Pedido não encontrado</div>;
 
   const currentIdx = STEPS.findIndex((s) => s.status === order.status);
   const isCancelled = order.status === "cancelled";
 
   return (
     <div className="px-4 py-6">
-      <div className="bg-white rounded-2xl border p-6 mb-4">
+      <div className="bg-white rounded-2xl border border-cafe/10 p-6 mb-4">
         <div className="text-center mb-6">
-          <p className="text-sm text-gray-500">Pedido</p>
-          <p className="text-3xl font-bold">#{order.order_number}</p>
+          <p className="text-sm text-muted">Pedido</p>
+          <p className="font-display text-3xl font-bold text-cafe">#{order.order_number}</p>
           {order.scheduled_for && (
             <p className="text-sm text-blue-600 mt-1">
               Agendado para {new Date(order.scheduled_for).toLocaleString("pt-BR")}
@@ -97,12 +115,12 @@ export default function OrderTrackingPage({ params }: Props) {
               return (
                 <div key={step.status} className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    isActive ? "bg-green-100" : "bg-gray-100"
+                    isActive ? "bg-green-100" : "bg-creme"
                   }`}>
-                    <StepIcon className={`w-5 h-5 ${isActive ? "text-green-600" : "text-gray-300"}`} />
+                    <StepIcon className={`w-5 h-5 ${isActive ? "text-green-600" : "text-cafe/25"}`} aria-hidden="true" />
                   </div>
                   <div className="flex-1">
-                    <p className={`text-sm font-medium ${isActive ? "text-gray-900" : "text-gray-400"}`}>
+                    <p className={`text-sm font-medium ${isActive ? "text-cafe" : "text-muted"}`}>
                       {step.label}
                     </p>
                   </div>
@@ -119,8 +137,8 @@ export default function OrderTrackingPage({ params }: Props) {
       </div>
 
       {/* Order details */}
-      <div className="bg-white rounded-2xl border p-6">
-        <h3 className="font-semibold text-sm mb-3">Itens do pedido</h3>
+      <div className="bg-white rounded-2xl border border-cafe/10 p-6">
+        <h3 className="font-display font-semibold text-sm text-cafe mb-3">Itens do pedido</h3>
         <div className="space-y-2 mb-4">
           {items.map((item) => (
             <div key={item.id} className="flex justify-between text-sm">
@@ -129,13 +147,13 @@ export default function OrderTrackingPage({ params }: Props) {
             </div>
           ))}
         </div>
-        <div className="border-t pt-3 space-y-1 text-sm">
-          <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
-          <div className="flex justify-between"><span className="text-gray-500">Entrega</span><span>{formatCurrency(order.delivery_fee)}</span></div>
+        <div className="border-t border-cafe/10 pt-3 space-y-1 text-sm text-cafe">
+          <div className="flex justify-between"><span className="text-muted">Subtotal</span><span>{formatCurrency(order.subtotal)}</span></div>
+          <div className="flex justify-between"><span className="text-muted">Entrega</span><span>{formatCurrency(order.delivery_fee)}</span></div>
           {order.discount > 0 && (
             <div className="flex justify-between text-green-600"><span>Desconto</span><span>-{formatCurrency(order.discount)}</span></div>
           )}
-          <div className="flex justify-between font-semibold text-base border-t pt-2">
+          <div className="flex justify-between font-semibold text-base border-t border-cafe/10 pt-2">
             <span>Total</span><span>{formatCurrency(order.total)}</span>
           </div>
         </div>

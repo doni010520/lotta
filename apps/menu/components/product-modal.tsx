@@ -5,6 +5,8 @@ import { X, Minus, Plus } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
+import { Sheet } from "./sheet";
+import { ProductImage } from "./product-image";
 
 interface Props {
   product: any;
@@ -90,104 +92,100 @@ export function ProductModal({ product, onClose }: Props) {
   const total = (unitPrice + getOptionsTotal()) * quantity;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto">
-        {/* Image */}
-        {product.image_url && (
-          <div className="relative">
-            <img src={product.image_url} alt="" className="w-full h-48 object-cover" />
-            <button onClick={onClose} className="absolute top-3 right-3 bg-white/90 rounded-full p-2">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        )}
+    <Sheet title={product.name} onClose={onClose}>
+      {/* Banner (com placeholder da marca quando não houver foto) */}
+      <div className="relative">
+        <ProductImage src={product.image_url} alt={product.name} sizes="(max-width: 640px) 100vw, 512px" className="w-full h-48" />
+        <button
+          onClick={onClose}
+          aria-label="Fechar"
+          className="absolute top-3 right-3 grid place-items-center h-10 w-10 rounded-full bg-white/90 text-cafe shadow-sm hover:bg-white transition-colors"
+        >
+          <X className="w-5 h-5" aria-hidden="true" />
+        </button>
+      </div>
 
-        <div className="p-5">
-          {!product.image_url && (
-            <button onClick={onClose} className="absolute top-3 right-3 p-2">
-              <X className="w-5 h-5" />
-            </button>
+      <div className="p-5">
+        <h2 className="font-display text-xl font-bold text-cafe">{product.name}</h2>
+        {product.description && <p className="text-sm text-muted mt-1">{product.description}</p>}
+
+        <div className="mt-2">
+          {product.promo_price ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted/70 line-through">{formatCurrency(product.price)}</span>
+              <span className="text-lg font-bold text-paprica">{formatCurrency(product.promo_price)}</span>
+            </div>
+          ) : (
+            <span className="text-lg font-bold text-cafe">{formatCurrency(product.price)}</span>
           )}
+        </div>
 
-          <h2 className="text-xl font-semibold">{product.name}</h2>
-          {product.description && <p className="text-sm text-gray-500 mt-1">{product.description}</p>}
-
-          <div className="mt-2">
-            {product.promo_price ? (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400 line-through">{formatCurrency(product.price)}</span>
-                <span className="text-lg font-bold text-paprica">{formatCurrency(product.promo_price)}</span>
-              </div>
-            ) : (
-              <span className="text-lg font-bold">{formatCurrency(product.price)}</span>
-            )}
-          </div>
-
-          {/* Option groups */}
-          {groups.map((group: any) => (
-            <div key={group.id} className="mt-5">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-medium text-sm">{group.name}</h3>
-                <span className="text-xs text-gray-400">
-                  {group.is_required ? "Obrigatório" : "Opcional"}
-                  {group.max_select > 1 && ` · até ${group.max_select}`}
-                </span>
-              </div>
-              <div className="space-y-1">
-                {(group.options ?? []).map((opt: any) => {
-                  const isSelected = (selectedOptions[group.id] ?? []).includes(opt.id);
-                  return (
-                    <button
-                      key={opt.id}
-                      onClick={() => toggleOption(group.id, opt.id, group.max_select)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border text-sm transition-colors ${
-                        isSelected ? "border-paprica bg-paprica/10" : "border-gray-200 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span>{opt.name}</span>
-                      {opt.price > 0 && (
-                        <span className="text-gray-500">+ {formatCurrency(opt.price)}</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+        {/* Option groups */}
+        {groups.map((group: any) => (
+          <div key={group.id} className="mt-5">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-sm text-cafe">{group.name}</h3>
+              <span className="text-xs text-muted">
+                {group.is_required ? "Obrigatório" : "Opcional"}
+                {group.max_select > 1 && ` · até ${group.max_select}`}
+              </span>
             </div>
-          ))}
-
-          {/* Notes */}
-          <div className="mt-5">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex: sem cebola, bem passado..."
-              rows={2}
-              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-paprica/20"
-            />
-          </div>
-
-          {/* Quantity + Add */}
-          <div className="mt-5 flex items-center gap-4">
-            <div className="flex items-center border rounded-lg">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2.5">
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="px-4 font-medium">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)} className="p-2.5">
-                <Plus className="w-4 h-4" />
-              </button>
+            <div className="space-y-1">
+              {(group.options ?? []).map((opt: any) => {
+                const isSelected = (selectedOptions[group.id] ?? []).includes(opt.id);
+                return (
+                  <button
+                    key={opt.id}
+                    aria-pressed={isSelected}
+                    onClick={() => toggleOption(group.id, opt.id, group.max_select)}
+                    className={`w-full flex items-center justify-between px-3 py-3 rounded-lg border text-sm transition-colors ${
+                      isSelected ? "border-paprica bg-paprica/10 text-cafe" : "border-cafe/10 hover:bg-creme"
+                    }`}
+                  >
+                    <span>{opt.name}</span>
+                    {opt.price > 0 && (
+                      <span className="text-muted">+ {formatCurrency(opt.price)}</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            <button
-              onClick={handleAdd}
-              disabled={!canAdd()}
-              className="flex-1 bg-paprica text-white rounded-lg py-3 font-medium hover:bg-paprica-dark disabled:opacity-50 transition-colors"
-            >
-              Adicionar · {formatCurrency(total)}
+          </div>
+        ))}
+
+        {/* Notes */}
+        <div className="mt-5">
+          <label htmlFor="product-notes" className="block text-sm font-medium text-cafe mb-1">Observações</label>
+          <textarea
+            id="product-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Ex: sem cebola, bem passado..."
+            rows={2}
+            className="w-full border border-cafe/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-paprica/25"
+          />
+        </div>
+
+        {/* Quantity + Add */}
+        <div className="mt-5 flex items-center gap-4">
+          <div className="flex items-center border border-cafe/10 rounded-lg">
+            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Diminuir quantidade" className="grid place-items-center h-11 w-11 text-cafe disabled:text-muted/40" disabled={quantity <= 1}>
+              <Minus className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <span className="px-2 min-w-8 text-center font-medium text-cafe" aria-live="polite">{quantity}</span>
+            <button onClick={() => setQuantity(quantity + 1)} aria-label="Aumentar quantidade" className="grid place-items-center h-11 w-11 text-cafe">
+              <Plus className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
+          <button
+            onClick={handleAdd}
+            disabled={!canAdd()}
+            className="flex-1 bg-paprica text-white rounded-lg py-3 font-medium hover:bg-paprica-dark disabled:opacity-50 transition-colors"
+          >
+            Adicionar · {formatCurrency(total)}
+          </button>
         </div>
       </div>
-    </div>
+    </Sheet>
   );
 }

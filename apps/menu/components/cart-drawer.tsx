@@ -7,6 +7,7 @@ import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { createOrder, requestPixPayment } from "@/lib/payment-client";
+import { Sheet } from "./sheet";
 
 interface Props {
   slug: string;
@@ -16,6 +17,9 @@ interface Props {
 }
 
 type Step = "cart" | "address" | "payment" | "pix";
+
+const inputClass =
+  "w-full border border-cafe/10 rounded-lg px-3 py-2.5 text-sm text-cafe placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-paprica/25";
 
 export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
   const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
@@ -34,6 +38,10 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
 
   const deliveryFee = selectedZone?.fee ?? 0;
   const total = subtotal + deliveryFee;
+
+  // mínimo do agendamento = agora (horário local), evita agendar no passado
+  const now = new Date();
+  const minSchedule = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
   async function handleSubmit() {
     if (!customerName || !customerPhone) {
@@ -99,207 +107,232 @@ export function CartDrawer({ slug, minOrder, zones, onClose }: Props) {
     }
   }
 
+  const stepTitle = step === "cart" ? "Carrinho" : step === "address" ? "Endereço" : "Pagamento";
+
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full max-w-lg sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="font-semibold text-lg">
-            {step === "cart" ? "Carrinho" : step === "address" ? "Endereço" : "Pagamento"}
-          </h2>
-          <button onClick={onClose} className="p-1"><X className="w-5 h-5" /></button>
-        </div>
+    <Sheet title={stepTitle} onClose={onClose}>
+      <div className="flex items-center justify-between p-4 border-b border-cafe/10">
+        <h2 className="font-display font-bold text-lg text-cafe">{stepTitle}</h2>
+        <button onClick={onClose} aria-label="Fechar" className="grid place-items-center h-10 w-10 -mr-2 rounded-full text-cafe hover:bg-creme transition-colors">
+          <X className="w-5 h-5" aria-hidden="true" />
+        </button>
+      </div>
 
-        <div className="p-4">
-          {step === "cart" && (
-            <>
-              {items.length === 0 ? (
-                <p className="text-center text-gray-400 py-8">Carrinho vazio</p>
-              ) : (
-                <div className="space-y-3 mb-4">
-                  {items.map((item, i) => (
-                    <div key={i} className="flex gap-3 items-start">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{item.productName}</p>
-                        {item.options.length > 0 && (
-                          <p className="text-xs text-gray-400">
-                            {item.options.map((o) => o.optionName).join(", ")}
-                          </p>
-                        )}
-                        <p className="text-sm font-semibold mt-1">{formatCurrency(item.totalPrice)}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => updateQuantity(i, item.quantity - 1)} className="p-1 border rounded">
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="px-2 text-sm">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(i, item.quantity + 1)} className="p-1 border rounded">
-                          <Plus className="w-3 h-3" />
-                        </button>
-                        <button onClick={() => removeItem(i)} className="p-1 text-paprica/60 ml-1">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {items.length > 0 && (
-                <>
-                  <div className="border-t pt-3 flex justify-between font-semibold">
-                    <span>Subtotal</span>
-                    <span>{formatCurrency(subtotal)}</span>
-                  </div>
-                  <button
-                    onClick={() => setStep("address")}
-                    disabled={subtotal < minOrder}
-                    className="w-full mt-4 bg-paprica text-white rounded-xl py-3 font-medium disabled:opacity-50"
-                  >
-                    {subtotal < minOrder
-                      ? `Pedido mínimo: ${formatCurrency(minOrder)}`
-                      : "Continuar"}
-                  </button>
-                </>
-              )}
-            </>
-          )}
-
-          {step === "address" && (
-            <>
+      <div className="p-4">
+        {step === "cart" && (
+          <>
+            {items.length === 0 ? (
+              <p className="text-center text-muted py-8">Carrinho vazio</p>
+            ) : (
               <div className="space-y-3 mb-4">
-                <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Seu nome" required className="w-full border rounded-lg px-3 py-2.5 text-sm" />
-                <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="WhatsApp (ex: 71999999999)" required className="w-full border rounded-lg px-3 py-2.5 text-sm" />
-                <div className="grid grid-cols-3 gap-2">
-                  <input value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} placeholder="Rua" className="col-span-2 border rounded-lg px-3 py-2.5 text-sm" />
-                  <input value={address.number} onChange={(e) => setAddress({ ...address, number: e.target.value })} placeholder="Nº" className="border rounded-lg px-3 py-2.5 text-sm" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <input value={address.complement} onChange={(e) => setAddress({ ...address, complement: e.target.value })} placeholder="Complemento" className="border rounded-lg px-3 py-2.5 text-sm" />
-                  <input value={address.neighborhood} onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })} placeholder="Bairro" className="border rounded-lg px-3 py-2.5 text-sm" />
-                </div>
+                {items.map((item, i) => (
+                  <div key={`${item.productId}-${i}`} className="flex gap-3 items-start">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-cafe">{item.productName}</p>
+                      {item.options.length > 0 && (
+                        <p className="text-xs text-muted">
+                          {item.options.map((o) => o.optionName).join(", ")}
+                        </p>
+                      )}
+                      <p className="text-sm font-semibold text-cafe mt-1">{formatCurrency(item.totalPrice)}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => updateQuantity(i, item.quantity - 1)} aria-label="Diminuir quantidade" className="grid place-items-center h-9 w-9 border border-cafe/10 rounded text-cafe">
+                        <Minus className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                      <span className="px-2 min-w-7 text-center text-sm" aria-live="polite">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(i, item.quantity + 1)} aria-label="Aumentar quantidade" className="grid place-items-center h-9 w-9 border border-cafe/10 rounded text-cafe">
+                        <Plus className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                      <button onClick={() => removeItem(i)} aria-label="Remover item" className="grid place-items-center h-9 w-9 text-paprica/70 hover:text-paprica ml-1">
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              {/* Delivery zone */}
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2 flex items-center gap-1"><MapPin className="w-4 h-4" /> Zona de entrega</p>
-                <div className="space-y-1">
-                  {zones.map((z) => (
-                    <button
-                      key={z.id}
-                      onClick={() => setSelectedZone(z)}
-                      className={`w-full flex justify-between px-3 py-2.5 rounded-lg border text-sm ${
-                        selectedZone?.id === z.id ? "border-paprica bg-paprica/10" : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <span>{z.name}</span>
-                      <span className="text-gray-500">{formatCurrency(z.fee)} · ~{z.estimated_min}min</span>
-                    </button>
-                  ))}
+            )}
+            {items.length > 0 && (
+              <>
+                <div className="border-t border-cafe/10 pt-3 flex justify-between font-semibold text-cafe">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(subtotal)}</span>
                 </div>
-              </div>
-
-              {/* Schedule */}
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2 flex items-center gap-1"><Clock className="w-4 h-4" /> Agendar pedido (opcional)</p>
-                <input
-                  type="datetime-local"
-                  value={scheduledFor}
-                  onChange={(e) => setScheduledFor(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2.5 text-sm"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={() => setStep("cart")} className="flex-1 border rounded-xl py-3 text-sm">Voltar</button>
                 <button
-                  onClick={() => selectedZone ? setStep("payment") : toast.error("Selecione a zona de entrega")}
-                  className="flex-1 bg-paprica text-white rounded-xl py-3 text-sm font-medium"
+                  onClick={() => setStep("address")}
+                  disabled={subtotal < minOrder}
+                  className="w-full mt-4 bg-paprica text-white rounded-xl py-3 font-medium hover:bg-paprica-dark disabled:opacity-50 transition-colors"
                 >
-                  Continuar
+                  {subtotal < minOrder ? `Pedido mínimo: ${formatCurrency(minOrder)}` : "Continuar"}
                 </button>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </>
+        )}
 
-          {step === "payment" && (
-            <>
-              <p className="text-sm font-medium mb-3 flex items-center gap-1"><CreditCard className="w-4 h-4" /> Forma de pagamento</p>
-              <div className="space-y-1 mb-4">
-                {[
-                  { value: "pix", label: "Pix" },
-                  { value: "cash", label: "Dinheiro na entrega" },
-                  { value: "card_on_delivery", label: "Maquininha na entrega" },
-                ].map((pm) => (
+        {step === "address" && (
+          <>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label htmlFor="cust-name" className="block text-sm font-medium text-cafe mb-1">Seu nome</label>
+                <input id="cust-name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} autoComplete="name" required placeholder="Nome completo" className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="cust-phone" className="block text-sm font-medium text-cafe mb-1">WhatsApp</label>
+                <input id="cust-phone" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} type="tel" inputMode="tel" autoComplete="tel" required placeholder="Ex: 71999999999" className={inputClass} />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2">
+                  <label htmlFor="addr-street" className="block text-sm font-medium text-cafe mb-1">Rua</label>
+                  <input id="addr-street" value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} autoComplete="address-line1" required placeholder="Rua" className={inputClass} />
+                </div>
+                <div>
+                  <label htmlFor="addr-number" className="block text-sm font-medium text-cafe mb-1">Nº</label>
+                  <input id="addr-number" value={address.number} onChange={(e) => setAddress({ ...address, number: e.target.value })} inputMode="numeric" required placeholder="Nº" className={inputClass} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label htmlFor="addr-complement" className="block text-sm font-medium text-cafe mb-1">Complemento</label>
+                  <input id="addr-complement" value={address.complement} onChange={(e) => setAddress({ ...address, complement: e.target.value })} autoComplete="address-line2" placeholder="Apto, bloco..." className={inputClass} />
+                </div>
+                <div>
+                  <label htmlFor="addr-neighborhood" className="block text-sm font-medium text-cafe mb-1">Bairro</label>
+                  <input id="addr-neighborhood" value={address.neighborhood} onChange={(e) => setAddress({ ...address, neighborhood: e.target.value })} autoComplete="address-level3" placeholder="Bairro" className={inputClass} />
+                </div>
+              </div>
+            </div>
+
+            {/* Delivery zone */}
+            <div className="mb-4">
+              <p className="text-sm font-medium text-cafe mb-2 flex items-center gap-1"><MapPin className="w-4 h-4" aria-hidden="true" /> Zona de entrega</p>
+              <div className="space-y-1">
+                {zones.map((z) => (
                   <button
-                    key={pm.value}
-                    onClick={() => setPaymentMethod(pm.value)}
-                    className={`w-full px-3 py-2.5 rounded-lg border text-sm text-left ${
-                      paymentMethod === pm.value ? "border-paprica bg-paprica/10" : "hover:bg-gray-50"
+                    key={z.id}
+                    aria-pressed={selectedZone?.id === z.id}
+                    onClick={() => setSelectedZone(z)}
+                    className={`w-full flex justify-between px-3 py-2.5 rounded-lg border text-sm transition-colors ${
+                      selectedZone?.id === z.id ? "border-paprica bg-paprica/10 text-cafe" : "border-cafe/10 hover:bg-creme"
                     }`}
                   >
-                    {pm.label}
+                    <span>{z.name}</span>
+                    <span className="text-muted">{formatCurrency(z.fee)} · ~{z.estimated_min}min</span>
                   </button>
                 ))}
               </div>
+            </div>
 
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Observações do pedido..."
-                rows={2}
-                className="w-full border rounded-lg px-3 py-2 text-sm mb-4"
+            {/* Schedule */}
+            <div className="mb-4">
+              <label htmlFor="schedule" className="text-sm font-medium text-cafe mb-2 flex items-center gap-1"><Clock className="w-4 h-4" aria-hidden="true" /> Agendar pedido (opcional)</label>
+              <input
+                id="schedule"
+                type="datetime-local"
+                min={minSchedule}
+                value={scheduledFor}
+                onChange={(e) => setScheduledFor(e.target.value)}
+                className={inputClass}
               />
+            </div>
 
-              {/* Summary */}
-              <div className="border-t pt-3 space-y-1 text-sm mb-4">
-                <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Entrega</span><span>{formatCurrency(deliveryFee)}</span></div>
-                <div className="flex justify-between font-semibold text-base pt-1 border-t"><span>Total</span><span>{formatCurrency(total)}</span></div>
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={() => setStep("address")} className="flex-1 border rounded-xl py-3 text-sm">Voltar</button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="flex-1 bg-paprica text-white rounded-xl py-3 text-sm font-medium disabled:opacity-50"
-                >
-                  {loading ? "Enviando..." : `Finalizar · ${formatCurrency(total)}`}
-                </button>
-              </div>
-            </>
-          )}
-
-          {step === "pix" && pixData && (
-            <div className="text-center">
-              <p className="text-sm font-medium mb-3">Pague com Pix para confirmar seu pedido</p>
-              {pixData.pixQrBase64 && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={`data:image/png;base64,${pixData.pixQrBase64}`} alt="QR Code Pix" className="w-48 h-48 mx-auto mb-3" />
-              )}
-              <p className="text-xs text-gray-500 mb-1">Pix copia e cola</p>
-              <textarea
-                readOnly
-                value={pixData.pixCode || ""}
-                rows={3}
-                className="w-full border rounded-lg px-3 py-2 text-xs mb-3"
-                onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-              />
+            <div className="flex gap-2">
+              <button onClick={() => setStep("cart")} className="flex-1 border border-cafe/10 rounded-xl py-3 text-sm text-cafe hover:bg-creme transition-colors">Voltar</button>
               <button
-                onClick={() => { navigator.clipboard?.writeText(pixData.pixCode || ""); toast.success("Código copiado"); }}
-                className="w-full border rounded-xl py-2.5 text-sm mb-2"
+                onClick={() => (selectedZone ? setStep("payment") : toast.error("Selecione a zona de entrega"))}
+                className="flex-1 bg-paprica text-white rounded-xl py-3 text-sm font-medium hover:bg-paprica-dark transition-colors"
               >
-                Copiar código Pix
-              </button>
-              <button
-                onClick={() => createdOrderId && router.push(`/${slug}/pedido/${createdOrderId}`)}
-                className="w-full bg-paprica text-white rounded-xl py-3 text-sm font-medium"
-              >
-                Já paguei · acompanhar pedido
+                Continuar
               </button>
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {step === "payment" && (
+          <>
+            <p className="text-sm font-medium text-cafe mb-3 flex items-center gap-1"><CreditCard className="w-4 h-4" aria-hidden="true" /> Forma de pagamento</p>
+            <div className="space-y-1 mb-4">
+              {[
+                { value: "pix", label: "Pix" },
+                { value: "cash", label: "Dinheiro na entrega" },
+                { value: "card_on_delivery", label: "Maquininha na entrega" },
+              ].map((pm) => (
+                <button
+                  key={pm.value}
+                  aria-pressed={paymentMethod === pm.value}
+                  onClick={() => setPaymentMethod(pm.value)}
+                  className={`w-full px-3 py-2.5 rounded-lg border text-sm text-left transition-colors ${
+                    paymentMethod === pm.value ? "border-paprica bg-paprica/10 text-cafe" : "border-cafe/10 hover:bg-creme"
+                  }`}
+                >
+                  {pm.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="order-notes" className="block text-sm font-medium text-cafe mb-1">Observações do pedido</label>
+              <textarea
+                id="order-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ex: troco para R$50, ponto de referência..."
+                rows={2}
+                className={inputClass}
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="border-t border-cafe/10 pt-3 space-y-1 text-sm mb-4">
+              <div className="flex justify-between"><span className="text-muted">Subtotal</span><span className="text-cafe">{formatCurrency(subtotal)}</span></div>
+              <div className="flex justify-between"><span className="text-muted">Entrega</span><span className="text-cafe">{formatCurrency(deliveryFee)}</span></div>
+              <div className="flex justify-between font-semibold text-base text-cafe pt-1 border-t border-cafe/10"><span>Total</span><span>{formatCurrency(total)}</span></div>
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => setStep("address")} className="flex-1 border border-cafe/10 rounded-xl py-3 text-sm text-cafe hover:bg-creme transition-colors">Voltar</button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex-1 bg-paprica text-white rounded-xl py-3 text-sm font-medium hover:bg-paprica-dark disabled:opacity-50 transition-colors"
+              >
+                {loading ? "Enviando..." : `Finalizar · ${formatCurrency(total)}`}
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === "pix" && pixData && (
+          <div className="text-center">
+            <p className="text-sm font-medium text-cafe mb-3">Pague com Pix para confirmar seu pedido</p>
+            {pixData.pixQrBase64 && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={`data:image/png;base64,${pixData.pixQrBase64}`} alt="QR Code Pix" className="w-48 h-48 mx-auto mb-3" />
+            )}
+            <p className="text-xs text-muted mb-1">Pix copia e cola</p>
+            <textarea
+              readOnly
+              aria-label="Código Pix copia e cola"
+              value={pixData.pixCode || ""}
+              rows={3}
+              className="w-full border border-cafe/10 rounded-lg px-3 py-2 text-xs mb-3"
+              onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+            />
+            <button
+              onClick={() => { navigator.clipboard?.writeText(pixData.pixCode || ""); toast.success("Código copiado"); }}
+              className="w-full border border-cafe/10 rounded-xl py-3 text-sm text-cafe hover:bg-creme transition-colors mb-2"
+            >
+              Copiar código Pix
+            </button>
+            <button
+              onClick={() => createdOrderId && router.push(`/${slug}/pedido/${createdOrderId}`)}
+              className="w-full bg-paprica text-white rounded-xl py-3 text-sm font-medium hover:bg-paprica-dark transition-colors"
+            >
+              Já paguei · acompanhar pedido
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+    </Sheet>
   );
 }

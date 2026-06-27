@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase";
 import { CartProvider } from "@/lib/cart";
 import { notFound } from "next/navigation";
 import Script from "next/script";
+import Image from "next/image";
 
 interface Props {
   children: React.ReactNode;
@@ -90,20 +91,26 @@ export default async function MenuLayout({ children, params }: Props) {
         `}</Script>
       )}
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-dvh bg-creme">
         {/* Header */}
-        <header className="bg-white border-b sticky top-0 z-40">
+        <header className="bg-white border-b border-cafe/10 sticky top-0 z-40">
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
             {restaurant.logo_url && (
-              <img src={restaurant.logo_url} alt="" className="w-10 h-10 rounded-full object-cover" />
+              <Image
+                src={restaurant.logo_url}
+                alt={`Logo de ${restaurant.name}`}
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-full object-cover border border-cafe/10"
+              />
             )}
             <div>
-              <h1 className="font-semibold text-lg leading-tight">{restaurant.name}</h1>
-              <p className="text-xs text-gray-500">
+              <h1 className="font-display font-bold text-lg leading-tight text-cafe">{restaurant.name}</h1>
+              <p className="text-xs text-muted">
                 {restaurant.is_open ? (
-                  <span className="text-green-600">● Aberto</span>
+                  <span className="text-green-600 font-medium">● Aberto</span>
                 ) : (
-                  <span className="text-paprica">● Fechado</span>
+                  <span className="text-paprica font-medium">● Fechado</span>
                 )}
                 {restaurant.avg_prep_time && (
                   <span className="ml-2">~{restaurant.avg_prep_time} min</span>
